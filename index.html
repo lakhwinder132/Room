@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The World's Darkroom</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #050508;
+    --text: #E8E8FF;
+    --text-muted: #6A6A9A;
+    --accent: #7B6EFF;
+    --pulse: #FF6B9D;
+    --card-bg: rgba(8, 8, 18, 0.92);
+    --star-bright: #FFFFFF;
+    --star-blue: #B8C4FF;
+    --star-warm: #FFD6A5;
+    --star-green: #C8FFD4;
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, sans-serif;
+    cursor: default;
+    user-select: none;
+  }
+
+  #canvas {
+    position: fixed; inset: 0;
+    width: 100%; height: 100%;
+  }
+
+  /* Overlay UI */
+  #ui {
+    position: fixed; inset: 0;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  /* Header */
+  #header {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    padding: 28px 36px;
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    opacity: 0;
+    animation: fadeIn 2s 1.5s ease forwards;
+  }
+  #header h1 {
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-weight: 300;
+    font-size: 18px;
+    letter-spacing: 0.12em;
+    color: rgba(232,232,255,0.6);
+    text-transform: uppercase;
+  }
+  #header .dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: 0.7;
+    margin-bottom: 2px;
+  }
+
+  /* Star count */
+  #star-count {
+    position: absolute;
+    top: 30px; right: 36px;
+    font-size: 12px;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+    opacity: 0;
+    animation: fadeIn 2s 2s ease forwards;
+  }
+  #star-count span { color: rgba(232,232,255,0.4); }
+
+  /* Hint text */
+  #hint {
+    position: absolute;
+    bottom: 90px; left: 0; right: 0;
+    text-align: center;
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-style: italic;
+    font-size: 15px;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+    opacity: 0;
+    animation: fadeIn 2s 3s ease forwards;
+    transition: opacity 0.4s;
+  }
+
+  /* Submit button */
+  #submit-btn {
+    position: absolute;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    pointer-events: all;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 11px 22px;
+    background: rgba(123,110,255,0.12);
+    border: 1px solid rgba(123,110,255,0.3);
+    border-radius: 100px;
+    color: rgba(232,232,255,0.7);
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    opacity: 0;
+    animation: fadeIn 1.5s 3.5s ease forwards;
+  }
+  #submit-btn:hover {
+    background: rgba(123,110,255,0.22);
+    border-color: rgba(123,110,255,0.6);
+    color: var(--text);
+    transform: translateX(-50%) translateY(-1px);
+  }
+  #submit-btn .plus {
+    font-size: 18px;
+    line-height: 1;
+    color: var(--accent);
+    font-weight: 300;
+  }
+
+  /* Submit drawer */
+  #drawer {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    padding: 32px;
+    background: linear-gradient(to top, rgba(5,5,12,0.98) 0%, rgba(5,5,12,0.92) 100%);
+    border-top: 1px solid rgba(123,110,255,0.15);
+    backdrop-filter: blur(20px);
+    transform: translateY(100%);
+    transition: transform 0.45s cubic-bezier(0.16,1,0.3,1);
+    pointer-events: none;
+  }
+  #drawer.open {
+    transform: translateY(0);
+    pointer-events: all;
+  }
+  #drawer-inner {
+    max-width: 520px;
+    margin: 0 auto;
+  }
+  #drawer h2 {
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-weight: 300;
+    font-style: italic;
+    font-size: 22px;
+    color: rgba(232,232,255,0.8);
+    margin-bottom: 6px;
+  }
+  #drawer p {
+    font-size: 12px;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+    margin-bottom: 20px;
+  }
+  #thought-input {
+    width: 100%;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(123,110,255,0.2);
+    border-radius: 12px;
+    padding: 16px;
+    color: var(--text);
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-size: 17px;
+    font-style: italic;
+    line-height: 1.6;
+    resize: none;
+    height: 110px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  #thought-input::placeholder {
+    color: rgba(106,106,154,0.5);
+  }
+  #thought-input:focus {
+    border-color: rgba(123,110,255,0.5);
+  }
+  #char-count {
+    text-align: right;
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 6px;
+    margin-bottom: 14px;
+  }
+  .drawer-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  #send-btn {
+    padding: 10px 24px;
+    background: rgba(123,110,255,0.2);
+    border: 1px solid rgba(123,110,255,0.4);
+    border-radius: 100px;
+    color: rgba(232,232,255,0.9);
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  #send-btn:hover {
+    background: rgba(123,110,255,0.35);
+    border-color: rgba(123,110,255,0.7);
+  }
+  #send-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  #cancel-btn {
+    padding: 10px 18px;
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 100px;
+    color: var(--text-muted);
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  #cancel-btn:hover { border-color: rgba(255,255,255,0.25); color: rgba(232,232,255,0.6); }
+  #drawer-msg {
+    font-size: 13px;
+    color: var(--accent);
+    font-style: italic;
+    font-family: 'Crimson Pro', serif;
+  }
+
+  /* Thought card */
+  #card {
+    position: absolute;
+    width: min(420px, 88vw);
+    pointer-events: all;
+    opacity: 0;
+    transform: scale(0.9);
+    transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.16,1,0.3,1);
+    z-index: 20;
+  }
+  #card.visible {
+    opacity: 1;
+    transform: scale(1);
+  }
+  #card-inner {
+    background: var(--card-bg);
+    border: 1px solid rgba(123,110,255,0.2);
+    border-radius: 16px;
+    padding: 28px 28px 22px;
+    backdrop-filter: blur(24px);
+    box-shadow: 0 0 60px rgba(123,110,255,0.08), 0 20px 60px rgba(0,0,0,0.6);
+  }
+  #card-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+  }
+  #card-time {
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  #card-close {
+    width: 24px; height: 24px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 50%;
+    color: var(--text-muted);
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    line-height: 1;
+  }
+  #card-close:hover { background: rgba(255,255,255,0.12); color: var(--text); }
+  #card-text {
+    font-family: 'Crimson Pro', Georgia, serif;
+    font-style: italic;
+    font-size: 20px;
+    font-weight: 300;
+    line-height: 1.65;
+    color: rgba(232,232,255,0.9);
+    min-height: 60px;
+  }
+  #card-footer {
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+  #relate-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
+    background: rgba(255,107,157,0.1);
+    border: 1px solid rgba(255,107,157,0.25);
+    border-radius: 100px;
+    color: rgba(255,107,157,0.8);
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  #relate-btn:hover {
+    background: rgba(255,107,157,0.18);
+    border-color: rgba(255,107,157,0.5);
+    color: var(--pulse);
+  }
+  #relate-btn.pulsed {
+    background: rgba(255,107,157,0.2);
+    border-color: rgba(255,107,157,0.5);
+    color: var(--pulse);
+  }
+  .heart-icon {
+    font-size: 15px;
+    transition: transform 0.15s;
+  }
+  #relate-btn:hover .heart-icon { transform: scale(1.2); }
+  #relate-btn.pulsed .heart-icon { animation: heartPop 0.4s ease; }
+  #relate-count {
+    font-size: 12px;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+  }
+
+  /* Loading state */
+  #loading {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    gap: 16px;
+    transition: opacity 0.8s ease;
+  }
+  #loading.fade {
+    opacity: 0;
+    pointer-events: none;
+  }
+  #loading p {
+    font-family: 'Crimson Pro', serif;
+    font-style: italic;
+    font-size: 16px;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+  }
+  .load-dots {
+    display: flex; gap: 8px;
+  }
+  .load-dot {
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: dotPulse 1.4s ease-in-out infinite;
+  }
+  .load-dot:nth-child(2) { animation-delay: 0.2s; }
+  .load-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  /* Toast */
+  #toast {
+    position: fixed;
+    top: 20px; left: 50%;
+    transform: translateX(-50%) translateY(-60px);
+    background: rgba(8,8,18,0.95);
+    border: 1px solid rgba(123,110,255,0.3);
+    border-radius: 100px;
+    padding: 10px 20px;
+    font-size: 13px;
+    color: rgba(232,232,255,0.8);
+    letter-spacing: 0.04em;
+    transition: transform 0.4s cubic-bezier(0.16,1,0.3,1);
+    z-index: 200;
+    white-space: nowrap;
+  }
+  #toast.show {
+    transform: translateX(-50%) translateY(0);
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; } to { opacity: 1; }
+  }
+  @keyframes dotPulse {
+    0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+    40% { opacity: 1; transform: scale(1); }
+  }
+  @keyframes heartPop {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.5); }
+    70% { transform: scale(0.9); }
+    100% { transform: scale(1); }
+  }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="load-dots">
+    <div class="load-dot"></div>
+    <div class="load-dot"></div>
+    <div class="load-dot"></div>
+  </div>
+  <p>gathering thoughts from around the world…</p>
+</div>
+
+<canvas id="canvas"></canvas>
+
+<div id="ui">
+  <div id="header">
+    <h1>The World's Darkroom</h1>
+    <div class="dot"></div>
+  </div>
+  <div id="star-count"><span id="count-num">0</span> <span>thoughts floating</span></div>
+
+  <div id="hint">touch a star to read a thought · they expire with the dawn</div>
+
+  <button id="submit-btn" aria-label="Share a thought">
+    <span class="plus">+</span>
+    share a thought
+  </button>
+
+  <div id="drawer">
+    <div id="drawer-inner">
+      <h2>what are you actually thinking?</h2>
+      <p>anonymous · expires in 24h · one thought per day</p>
+      <textarea id="thought-input" placeholder="it's 2am and…" maxlength="200"></textarea>
+      <div id="char-count">0 / 200</div>
+      <div class="drawer-actions">
+        <button id="send-btn">release it</button>
+        <button id="cancel-btn">never mind</button>
+        <span id="drawer-msg"></span>
+      </div>
+    </div>
+  </div>
+
+  <div id="card">
+    <div id="card-inner">
+      <div id="card-meta">
+        <span id="card-time"></span>
+        <button id="card-close" aria-label="Close">✕</button>
+      </div>
+      <div id="card-text"></div>
+      <div id="card-footer">
+        <button id="relate-btn">
+          <span class="heart-icon">♡</span>
+          I feel this
+        </button>
+        <span id="relate-count"></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+let W, H, dpr;
+let stars = [];
+let thoughts = [];
+let mouseX = 0, mouseY = 0;
+let animFrame;
+let hoveredStar = null;
+let activeStarId = null;
+let pulseEffects = [];
+
+function resize() {
+  dpr = window.devicePixelRatio || 1;
+  W = window.innerWidth;
+  H = window.innerHeight;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+}
+
+const STAR_COLORS = [
+  { r:255,g:255,b:255 },
+  { r:184,g:196,b:255 },
+  { r:255,g:214,b:165 },
+  { r:200,g:255,b:212 },
+  { r:255,g:200,b:220 },
+];
+
+function makeBgStars(n) {
+  const arr = [];
+  for (let i = 0; i < n; i++) {
+    const col = STAR_COLORS[Math.floor(Math.random() * STAR_COLORS.length)];
+    arr.push({
+      x: Math.random(),
+      y: Math.random(),
+      r: 0.3 + Math.random() * 1.0,
+      depth: 0.2 + Math.random() * 0.8,
+      phase: Math.random() * Math.PI * 2,
+      speed: 0.0003 + Math.random() * 0.0008,
+      col,
+    });
+  }
+  return arr;
+}
+
+let bgStars = [];
+
+function initBgStars() {
+  bgStars = makeBgStars(500);
+}
+
+function makeThoughtStar(thought) {
+  return {
+    id: thought.id,
+    x: 0.1 + Math.random() * 0.8,
+    y: 0.1 + Math.random() * 0.8,
+    r: 2.5 + Math.random() * 2,
+    depth: 0.5,
+    phase: Math.random() * Math.PI * 2,
+    speed: 0.0005 + Math.random() * 0.0005,
+    col: STAR_COLORS[1],
+    isThought: true,
+    thought,
+    appearing: true,
+    appearProgress: 0,
+    hovered: false,
+  };
+}
+
+function drawScene(ts) {
+  ctx.clearRect(0, 0, W, H);
+
+  const px = (mouseX / W - 0.5);
+  const py = (mouseY / H - 0.5);
+
+  for (const s of bgStars) {
+    const twinkle = 0.4 + 0.6 * Math.abs(Math.sin(ts * s.speed * 1000 + s.phase));
+    const ox = px * s.depth * 18;
+    const oy = py * s.depth * 18;
+    const sx = s.x * W + ox;
+    const sy = s.y * H + oy;
+    ctx.save();
+    ctx.globalAlpha = twinkle * 0.7;
+    ctx.beginPath();
+    ctx.arc(sx, sy, s.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgb(${s.col.r},${s.col.g},${s.col.b})`;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  hoveredStar = null;
+
+  for (const s of stars) {
+    if (s.appearing) {
+      s.appearProgress = Math.min(1, s.appearProgress + 0.018);
+      if (s.appearProgress >= 1) s.appearing = false;
+    }
+
+    const twinkle = 0.6 + 0.4 * Math.abs(Math.sin(ts * s.speed * 1000 + s.phase));
+    const ox = px * s.depth * 22;
+    const oy = py * s.depth * 22;
+    const sx = s.x * W + ox;
+    const sy = s.y * H + oy;
+
+    const dx = mouseX - sx;
+    const dy = mouseY - sy;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const isHovered = dist < 28;
+    if (isHovered) { hoveredStar = s; s.hovered = true; } else { s.hovered = false; }
+    const isActive = s.id === activeStarId;
+
+    const baseAlpha = s.appearProgress;
+    const glow = isHovered || isActive ? 1 : 0;
+    const displayR = s.r * (1 + glow * 0.5) * s.appearProgress;
+
+    ctx.save();
+
+    if (isHovered || isActive) {
+      const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, displayR * 10);
+      grad.addColorStop(0, `rgba(123,110,255,${0.35 * baseAlpha})`);
+      grad.addColorStop(1, `rgba(123,110,255,0)`);
+      ctx.beginPath();
+      ctx.arc(sx, sy, displayR * 10, 0, Math.PI * 2);
+      ctx.fillStyle = grad;
+      ctx.fill();
+    }
+
+    ctx.globalAlpha = (twinkle * 0.8 + 0.2) * baseAlpha * (isHovered || isActive ? 1 : 0.85);
+    const grad2 = ctx.createRadialGradient(sx, sy, 0, sx, sy, displayR * 2.5);
+    grad2.addColorStop(0, `rgba(255,255,255,1)`);
+    grad2.addColorStop(0.4, `rgba(200,196,255,0.8)`);
+    grad2.addColorStop(1, `rgba(123,110,255,0)`);
+    ctx.beginPath();
+    ctx.arc(sx, sy, displayR * 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = grad2;
+    ctx.fill();
+
+    ctx.restore();
+
+    s._screenX = sx;
+    s._screenY = sy;
+  }
+
+  for (let i = pulseEffects.length - 1; i >= 0; i--) {
+    const p = pulseEffects[i];
+    p.progress += 0.025;
+    if (p.progress >= 1) { pulseEffects.splice(i, 1); continue; }
+    const radius = p.progress * 80;
+    const alpha = (1 - p.progress) * 0.6;
+    ctx.save();
+    ctx.strokeStyle = `rgba(255,107,157,${alpha})`;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+    ctx.stroke();
+
+    const radius2 = p.progress * 40;
+    const alpha2 = (1 - p.progress) * 0.3;
+    ctx.strokeStyle = `rgba(255,107,157,${alpha2})`;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, radius2, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  canvas.style.cursor = hoveredStar ? 'pointer' : 'default';
+  animFrame = requestAnimationFrame(drawScene);
+}
+
+function positionCard(sx, sy) {
+  const card = document.getElementById('card');
+  const cw = card.offsetWidth || 420;
+  const ch = card.offsetHeight || 220;
+  let x = sx - cw / 2;
+  let y = sy - ch - 24;
+  x = Math.max(16, Math.min(W - cw - 16, x));
+  y = Math.max(70, Math.min(H - ch - 100, y));
+  card.style.left = x + 'px';
+  card.style.top = y + 'px';
+}
+
+function timeAgo(ts) {
+  const diff = Date.now() - ts;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return 'yesterday';
+}
+
+function typewrite(el, text, done) {
+  el.textContent = '';
+  let i = 0;
+  const interval = setInterval(() => {
+    el.textContent += text[i++];
+    if (i >= text.length) { clearInterval(interval); if(done) done(); }
+  }, 28);
+}
+
+let currentRelatedId = null;
+
+function openCard(star) {
+  activeStarId = star.id;
+  const card = document.getElementById('card');
+  const t = star.thought;
+
+  document.getElementById('card-time').textContent = timeAgo(t.createdAt);
+  document.getElementById('card-text').textContent = '';
+  document.getElementById('relate-count').textContent = `${t.heartbeats || 0} felt this`;
+
+  const alreadyRelated = JSON.parse(localStorage.getItem('related_ids') || '[]');
+  const btn = document.getElementById('relate-btn');
+  btn.classList.toggle('pulsed', alreadyRelated.includes(t.id));
+  btn.querySelector('.heart-icon').textContent = alreadyRelated.includes(t.id) ? '♥' : '♡';
+
+  card.style.left = '-9999px';
+  card.style.top = '-9999px';
+  card.classList.add('visible');
+
+  requestAnimationFrame(() => {
+    positionCard(star._screenX, star._screenY);
+    typewrite(document.getElementById('card-text'), t.text);
+  });
+
+  currentRelatedId = t.id;
+}
+
+function closeCard() {
+  activeStarId = null;
+  currentRelatedId = null;
+  document.getElementById('card').classList.remove('visible');
+}
+
+canvas.addEventListener('click', (e) => {
+  if (hoveredStar) {
+    openCard(hoveredStar);
+  } else if (activeStarId) {
+    closeCard();
+  }
+});
+
+canvas.addEventListener('mousemove', (e) => {
+  mouseX = e.clientX;
+  mouseY = e.clientY;
+});
+
+canvas.addEventListener('touchmove', (e) => {
+  mouseX = e.touches[0].clientX;
+  mouseY = e.touches[0].clientY;
+}, { passive: true });
+
+canvas.addEventListener('touchend', (e) => {
+  const tx = e.changedTouches[0].clientX;
+  const ty = e.changedTouches[0].clientY;
+  let tapped = null;
+  for (const s of stars) {
+    const dx = tx - s._screenX;
+    const dy = ty - s._screenY;
+    if (Math.sqrt(dx*dx+dy*dy) < 36) { tapped = s; break; }
+  }
+  if (tapped) openCard(tapped);
+  else if (activeStarId) closeCard();
+}, { passive: true });
+
+document.getElementById('card-close').addEventListener('click', closeCard);
+
+document.getElementById('relate-btn').addEventListener('click', () => {
+  if (!currentRelatedId) return;
+  const alreadyRelated = JSON.parse(localStorage.getItem('related_ids') || '[]');
+  if (alreadyRelated.includes(currentRelatedId)) return;
+
+  alreadyRelated.push(currentRelatedId);
+  localStorage.setItem('related_ids', JSON.stringify(alreadyRelated));
+
+  const btn = document.getElementById('relate-btn');
+  btn.classList.add('pulsed');
+  btn.querySelector('.heart-icon').textContent = '♥';
+
+  const s = stars.find(x => x.id === currentRelatedId);
+  if (s) {
+    pulseEffects.push({ x: s._screenX, y: s._screenY, progress: 0 });
+    s.thought.heartbeats = (s.thought.heartbeats || 0) + 1;
+    document.getElementById('relate-count').textContent = `${s.thought.heartbeats} felt this`;
+    incrementHeartbeat(currentRelatedId);
+  }
+  showToast('a heartbeat sent into the dark');
+});
+
+let drawerOpen = false;
+
+document.getElementById('submit-btn').addEventListener('click', () => {
+  const submitted = localStorage.getItem('submitted_today');
+  const today = new Date().toDateString();
+  if (submitted === today) {
+    showToast('you\'ve already shared a thought tonight');
+    return;
+  }
+  openDrawer();
+});
+
+document.getElementById('cancel-btn').addEventListener('click', closeDrawer);
+
+document.getElementById('thought-input').addEventListener('input', (e) => {
+  const len = e.target.value.length;
+  document.getElementById('char-count').textContent = `${len} / 200`;
+  document.getElementById('send-btn').disabled = len < 3;
+});
+
+document.getElementById('send-btn').addEventListener('click', submitThought);
+
+document.getElementById('thought-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submitThought();
+});
+
+function openDrawer() {
+  drawerOpen = true;
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('thought-input').value = '';
+  document.getElementById('char-count').textContent = '0 / 200';
+  document.getElementById('send-btn').disabled = true;
+  document.getElementById('drawer-msg').textContent = '';
+  setTimeout(() => document.getElementById('thought-input').focus(), 500);
+  document.getElementById('hint').style.opacity = '0';
+  document.getElementById('submit-btn').style.opacity = '0';
+}
+
+function closeDrawer() {
+  drawerOpen = false;
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('hint').style.opacity = '';
+  document.getElementById('submit-btn').style.opacity = '';
+}
+
+async function submitThought() {
+  const text = document.getElementById('thought-input').value.trim();
+  if (text.length < 3) return;
+
+  const btn = document.getElementById('send-btn');
+  const msg = document.getElementById('drawer-msg');
+  btn.disabled = true;
+  btn.textContent = 'releasing…';
+  msg.textContent = '';
+
+  const thought = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+    text,
+    createdAt: Date.now(),
+    heartbeats: 0,
+    expiresAt: Date.now() + 24 * 60 * 60 * 1000,
+  };
+
+  try {
+    await saveThought(thought);
+    thoughts.push(thought);
+    const newStar = makeThoughtStar(thought);
+    newStar.appearProgress = 0;
+    newStar.appearing = true;
+    stars.push(newStar);
+    updateCount();
+
+    localStorage.setItem('submitted_today', new Date().toDateString());
+    btn.textContent = 'release it';
+    msg.textContent = '✦ your thought is now a star';
+    setTimeout(closeDrawer, 1800);
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = 'release it';
+    msg.textContent = 'something went wrong, try again';
+  }
+}
+
+function updateCount() {
+  document.getElementById('count-num').textContent = thoughts.length;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+async function saveThought(thought) {
+  try {
+    await window.storage.set(`thought:${thought.id}`, JSON.stringify(thought), true);
+  } catch(e) { console.warn('storage save failed', e); }
+}
+
+async function incrementHeartbeat(id) {
+  try {
+    const result = await window.storage.get(`thought:${id}`, true);
+    if (result) {
+      const t = JSON.parse(result.value);
+      t.heartbeats = (t.heartbeats || 0) + 1;
+      await window.storage.set(`thought:${id}`, JSON.stringify(t), true);
+    }
+  } catch(e) { console.warn('heartbeat update failed', e); }
+}
+
+async function loadThoughts() {
+  try {
+    const result = await window.storage.list('thought:', true);
+    if (!result || !result.keys) return [];
+    const now = Date.now();
+    const loaded = [];
+    for (const key of result.keys) {
+      try {
+        const item = await window.storage.get(key, true);
+        if (item) {
+          const t = JSON.parse(item.value);
+          if (t.expiresAt > now) {
+            loaded.push(t);
+          } else {
+            await window.storage.delete(key, true);
+          }
+        }
+      } catch(e) {}
+    }
+    return loaded;
+  } catch(e) {
+    console.warn('load failed', e);
+    return [];
+  }
+}
+
+function seedDemoThoughts() {
+  const demos = [
+    "i keep saying 'fine' when people ask how i am. i wonder if anyone notices.",
+    "the version of me i show people and the version i am at 2am feel like strangers to each other.",
+    "sometimes i open a text draft to someone, write everything i want to say, then delete it all.",
+    "i miss someone i haven't spoken to in three years. i hope they're happy without me.",
+    "i think i've been pretending to be okay for so long i've forgotten how to ask for help.",
+    "does anyone else feel like they're performing their own personality?",
+    "i love my life but some nights i grieve the version of it that didn't happen.",
+    "there is a song that makes me cry every time and i've never told anyone which one.",
+    "i wonder if the people from my past think about me the way i still think about them.",
+    "i'm not sad exactly. just a little hollow in a way that sleep doesn't fix.",
+    "i wish i was better at staying in touch with people i love.",
+    "sometimes the kindest thing anyone's done for me was a stranger who smiled at exactly the right moment.",
+    "i have a whole life inside my head that no one knows about.",
+    "it's embarrassing how much i still care about something that happened years ago.",
+    "i've been feeling untethered lately. like a kite with a broken string.",
+  ];
+  const now = Date.now();
+  return demos.map((text, i) => ({
+    id: 'demo_' + i,
+    text,
+    createdAt: now - Math.random() * 8 * 3600000,
+    heartbeats: Math.floor(Math.random() * 40),
+    expiresAt: now + 20 * 3600000,
+  }));
+}
+
+async function init() {
+  resize();
+  window.addEventListener('resize', () => { resize(); });
+  initBgStars();
+  requestAnimationFrame(drawScene);
+
+  await new Promise(r => setTimeout(r, 600));
+  thoughts = await loadThoughts();
+
+  if (thoughts.length === 0) {
+    thoughts = seedDemoThoughts();
+    for (const t of thoughts) {
+      await saveThought(t);
+    }
+  }
+
+  stars = thoughts.map(makeThoughtStar);
+
+  stars.forEach((s, i) => {
+    const delay = i * 120;
+    setTimeout(() => {
+      s.appearing = true;
+      s.appearProgress = 0;
+    }, delay);
+  });
+
+  updateCount();
+
+  const loading = document.getElementById('loading');
+  loading.classList.add('fade');
+  setTimeout(() => loading.style.display = 'none', 900);
+}
+
+init();
+</script>
+</body>
+</html>

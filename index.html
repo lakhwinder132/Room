@@ -1,952 +1,700 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>The World's Darkroom</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;1,300;1,400&display=swap" rel="stylesheet">
-<style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AnonRoom — Anonymous Group Chat</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
 
-  :root {
-    --bg: #050508;
-    --text: #E8E8FF;
-    --text-muted: #6A6A9A;
-    --accent: #7B6EFF;
-    --pulse: #FF6B9D;
-    --card-bg: rgba(8, 8, 18, 0.92);
-    --star-bright: #FFFFFF;
-    --star-blue: #B8C4FF;
-    --star-warm: #FFD6A5;
-    --star-green: #C8FFD4;
-  }
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  html, body {
-    width: 100%; height: 100%;
-    overflow: hidden;
-    background: var(--bg);
-    color: var(--text);
-    font-family: system-ui, -apple-system, sans-serif;
-    cursor: default;
-    user-select: none;
-  }
+    :root {
+      --bg:          #0f0f13;
+      --surface:     #18181f;
+      --surface2:    #22222d;
+      --border:      #2a2a38;
+      --text:        #e8e8f0;
+      --muted:       #6b6b80;
+      --accent:      #7c5cfc;
+      --accent-glow: rgba(124,92,252,.25);
+      --radius:      14px;
+      --msg-radius:  18px;
+    }
 
-  #canvas {
-    position: fixed; inset: 0;
-    width: 100%; height: 100%;
-  }
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      -webkit-font-smoothing: antialiased;
+    }
 
-  /* Overlay UI */
-  #ui {
-    position: fixed; inset: 0;
-    pointer-events: none;
-    z-index: 10;
-  }
+    #lobby {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
 
-  /* Header */
-  #header {
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    padding: 28px 36px;
-    display: flex;
-    align-items: baseline;
-    gap: 12px;
-    opacity: 0;
-    animation: fadeIn 2s 1.5s ease forwards;
-  }
-  #header h1 {
-    font-family: 'Crimson Pro', Georgia, serif;
-    font-weight: 300;
-    font-size: 18px;
-    letter-spacing: 0.12em;
-    color: rgba(232,232,255,0.6);
-    text-transform: uppercase;
-  }
-  #header .dot {
-    width: 5px; height: 5px;
-    border-radius: 50%;
-    background: var(--accent);
-    opacity: 0.7;
-    margin-bottom: 2px;
-  }
+    .logo-wrap { margin-bottom: 32px; text-align: center; }
+    .logo-icon { font-size: 48px; line-height: 1; margin-bottom: 10px; }
+    .logo-name {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 28px;
+      font-weight: 600;
+      letter-spacing: -1px;
+      background: linear-gradient(135deg, #a78bfa, #7c5cfc, #5b8dfc);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .logo-sub { color: var(--muted); font-size: 13px; margin-top: 4px; }
 
-  /* Star count */
-  #star-count {
-    position: absolute;
-    top: 30px; right: 36px;
-    font-size: 12px;
-    color: var(--text-muted);
-    letter-spacing: 0.08em;
-    opacity: 0;
-    animation: fadeIn 2s 2s ease forwards;
-  }
-  #star-count span { color: rgba(232,232,255,0.4); }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+      width: 100%;
+      max-width: 400px;
+    }
+    .card-title { font-size: 17px; font-weight: 600; margin-bottom: 20px; color: var(--text); }
+    .input-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
 
-  /* Hint text */
-  #hint {
-    position: absolute;
-    bottom: 90px; left: 0; right: 0;
-    text-align: center;
-    font-family: 'Crimson Pro', Georgia, serif;
-    font-style: italic;
-    font-size: 15px;
-    color: var(--text-muted);
-    letter-spacing: 0.04em;
-    opacity: 0;
-    animation: fadeIn 2s 3s ease forwards;
-    transition: opacity 0.4s;
-  }
+    input[type="text"] {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 13px 16px;
+      color: var(--text);
+      font-size: 15px;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s;
+      width: 100%;
+    }
+    input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+    input[type="text"]::placeholder { color: var(--muted); }
 
-  /* Submit button */
-  #submit-btn {
-    position: absolute;
-    bottom: 28px;
-    left: 50%;
-    transform: translateX(-50%);
-    pointer-events: all;
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    padding: 11px 22px;
-    background: rgba(123,110,255,0.12);
-    border: 1px solid rgba(123,110,255,0.3);
-    border-radius: 100px;
-    color: rgba(232,232,255,0.7);
-    font-size: 13px;
-    letter-spacing: 0.06em;
-    cursor: pointer;
-    transition: all 0.25s ease;
-    opacity: 0;
-    animation: fadeIn 1.5s 3.5s ease forwards;
-  }
-  #submit-btn:hover {
-    background: rgba(123,110,255,0.22);
-    border-color: rgba(123,110,255,0.6);
-    color: var(--text);
-    transform: translateX(-50%) translateY(-1px);
-  }
-  #submit-btn .plus {
-    font-size: 18px;
-    line-height: 1;
-    color: var(--accent);
-    font-weight: 300;
-  }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 13px 20px;
+      font-size: 15px;
+      font-weight: 600;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      width: 100%;
+      transition: opacity .15s, transform .1s;
+    }
+    .btn:active { transform: scale(.98); opacity: .9; }
+    .btn-ghost { background: var(--surface2); color: var(--text); }
+    .btn-ghost:hover { background: var(--border); }
 
-  /* Submit drawer */
-  #drawer {
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    padding: 32px;
-    background: linear-gradient(to top, rgba(5,5,12,0.98) 0%, rgba(5,5,12,0.92) 100%);
-    border-top: 1px solid rgba(123,110,255,0.15);
-    backdrop-filter: blur(20px);
-    transform: translateY(100%);
-    transition: transform 0.45s cubic-bezier(0.16,1,0.3,1);
-    pointer-events: none;
-  }
-  #drawer.open {
-    transform: translateY(0);
-    pointer-events: all;
-  }
-  #drawer-inner {
-    max-width: 520px;
-    margin: 0 auto;
-  }
-  #drawer h2 {
-    font-family: 'Crimson Pro', Georgia, serif;
-    font-weight: 300;
-    font-style: italic;
-    font-size: 22px;
-    color: rgba(232,232,255,0.8);
-    margin-bottom: 6px;
-  }
-  #drawer p {
-    font-size: 12px;
-    color: var(--text-muted);
-    letter-spacing: 0.04em;
-    margin-bottom: 20px;
-  }
-  #thought-input {
-    width: 100%;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(123,110,255,0.2);
-    border-radius: 12px;
-    padding: 16px;
-    color: var(--text);
-    font-family: 'Crimson Pro', Georgia, serif;
-    font-size: 17px;
-    font-style: italic;
-    line-height: 1.6;
-    resize: none;
-    height: 110px;
-    outline: none;
-    transition: border-color 0.2s;
-  }
-  #thought-input::placeholder {
-    color: rgba(106,106,154,0.5);
-  }
-  #thought-input:focus {
-    border-color: rgba(123,110,255,0.5);
-  }
-  #char-count {
-    text-align: right;
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-top: 6px;
-    margin-bottom: 14px;
-  }
-  .drawer-actions {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-  }
-  #send-btn {
-    padding: 10px 24px;
-    background: rgba(123,110,255,0.2);
-    border: 1px solid rgba(123,110,255,0.4);
-    border-radius: 100px;
-    color: rgba(232,232,255,0.9);
-    font-size: 13px;
-    letter-spacing: 0.06em;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  #send-btn:hover {
-    background: rgba(123,110,255,0.35);
-    border-color: rgba(123,110,255,0.7);
-  }
-  #send-btn:disabled {
-    opacity: 0.4;
-    cursor: not-allowed;
-  }
-  #cancel-btn {
-    padding: 10px 18px;
-    background: transparent;
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 100px;
-    color: var(--text-muted);
-    font-size: 13px;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  #cancel-btn:hover { border-color: rgba(255,255,255,0.25); color: rgba(232,232,255,0.6); }
-  #drawer-msg {
-    font-size: 13px;
-    color: var(--accent);
-    font-style: italic;
-    font-family: 'Crimson Pro', serif;
-  }
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 20px 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
 
-  /* Thought card */
-  #card {
-    position: absolute;
-    width: min(420px, 88vw);
-    pointer-events: all;
-    opacity: 0;
-    transform: scale(0.9);
-    transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.16,1,0.3,1);
-    z-index: 20;
-  }
-  #card.visible {
-    opacity: 1;
-    transform: scale(1);
-  }
-  #card-inner {
-    background: var(--card-bg);
-    border: 1px solid rgba(123,110,255,0.2);
-    border-radius: 16px;
-    padding: 28px 28px 22px;
-    backdrop-filter: blur(24px);
-    box-shadow: 0 0 60px rgba(123,110,255,0.08), 0 20px 60px rgba(0,0,0,0.6);
-  }
-  #card-meta {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
-  }
-  #card-time {
-    font-size: 11px;
-    color: var(--text-muted);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-  #card-close {
-    width: 24px; height: 24px;
-    display: flex; align-items: center; justify-content: center;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 50%;
-    color: var(--text-muted);
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.2s;
-    line-height: 1;
-  }
-  #card-close:hover { background: rgba(255,255,255,0.12); color: var(--text); }
-  #card-text {
-    font-family: 'Crimson Pro', Georgia, serif;
-    font-style: italic;
-    font-size: 20px;
-    font-weight: 300;
-    line-height: 1.65;
-    color: rgba(232,232,255,0.9);
-    min-height: 60px;
-  }
-  #card-footer {
-    margin-top: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-top: 16px;
-    border-top: 1px solid rgba(255,255,255,0.06);
-  }
-  #relate-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 18px;
-    background: rgba(255,107,157,0.1);
-    border: 1px solid rgba(255,107,157,0.25);
-    border-radius: 100px;
-    color: rgba(255,107,157,0.8);
-    font-size: 13px;
-    letter-spacing: 0.04em;
-    cursor: pointer;
-    transition: all 0.2s;
-  }
-  #relate-btn:hover {
-    background: rgba(255,107,157,0.18);
-    border-color: rgba(255,107,157,0.5);
-    color: var(--pulse);
-  }
-  #relate-btn.pulsed {
-    background: rgba(255,107,157,0.2);
-    border-color: rgba(255,107,157,0.5);
-    color: var(--pulse);
-  }
-  .heart-icon {
-    font-size: 15px;
-    transition: transform 0.15s;
-  }
-  #relate-btn:hover .heart-icon { transform: scale(1.2); }
-  #relate-btn.pulsed .heart-icon { animation: heartPop 0.4s ease; }
-  #relate-count {
-    font-size: 12px;
-    color: var(--text-muted);
-    letter-spacing: 0.04em;
-  }
+    .anon-badge {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 20px;
+      text-align: center;
+      line-height: 1.5;
+      width: 100%;
+      max-width: 400px;
+    }
+    .anon-badge strong { color: var(--text); }
 
-  /* Loading state */
-  #loading {
-    position: fixed; inset: 0;
-    background: var(--bg);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 100;
-    gap: 16px;
-    transition: opacity 0.8s ease;
-  }
-  #loading.fade {
-    opacity: 0;
-    pointer-events: none;
-  }
-  #loading p {
-    font-family: 'Crimson Pro', serif;
-    font-style: italic;
-    font-size: 16px;
-    color: var(--text-muted);
-    letter-spacing: 0.04em;
-  }
-  .load-dots {
-    display: flex; gap: 8px;
-  }
-  .load-dot {
-    width: 4px; height: 4px;
-    border-radius: 50%;
-    background: var(--accent);
-    animation: dotPulse 1.4s ease-in-out infinite;
-  }
-  .load-dot:nth-child(2) { animation-delay: 0.2s; }
-  .load-dot:nth-child(3) { animation-delay: 0.4s; }
+    .err-msg { color: #f87171; font-size: 13px; margin-top: 8px; min-height: 18px; }
 
-  /* Toast */
-  #toast {
-    position: fixed;
-    top: 20px; left: 50%;
-    transform: translateX(-50%) translateY(-60px);
-    background: rgba(8,8,18,0.95);
-    border: 1px solid rgba(123,110,255,0.3);
-    border-radius: 100px;
-    padding: 10px 20px;
-    font-size: 13px;
-    color: rgba(232,232,255,0.8);
-    letter-spacing: 0.04em;
-    transition: transform 0.4s cubic-bezier(0.16,1,0.3,1);
-    z-index: 200;
-    white-space: nowrap;
-  }
-  #toast.show {
-    transform: translateX(-50%) translateY(0);
-  }
+    /* ── CHAT ── */
+    #chat-app { display: none; height: 100vh; flex-direction: column; }
 
-  @keyframes fadeIn {
-    from { opacity: 0; } to { opacity: 1; }
-  }
-  @keyframes dotPulse {
-    0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
-    40% { opacity: 1; transform: scale(1); }
-  }
-  @keyframes heartPop {
-    0% { transform: scale(1); }
-    40% { transform: scale(1.5); }
-    70% { transform: scale(0.9); }
-    100% { transform: scale(1); }
-  }
-</style>
+    .chat-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      gap: 12px;
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .room-pill {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--accent);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background .15s;
+      flex-shrink: 0;
+    }
+    .room-pill:hover { background: var(--border); }
+    .room-pill-label { display: flex; align-items: center; gap: 6px; }
+    .online-dot {
+      width: 7px; height: 7px;
+      background: #22c55e;
+      border-radius: 50%;
+      flex-shrink: 0;
+      animation: pulse-green 2s infinite;
+    }
+    @keyframes pulse-green {
+      0%,100% { box-shadow: 0 0 0 0 rgba(34,197,94,.5); }
+      50%      { box-shadow: 0 0 0 4px rgba(34,197,94,0); }
+    }
+    .online-count { font-size: 12px; color: var(--muted); white-space: nowrap; }
+    .my-identity { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); flex-shrink: 0; }
+    .identity-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .btn-leave {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 12px;
+      color: var(--muted);
+      font-size: 13px;
+      font-family: 'Inter', sans-serif;
+      cursor: pointer;
+      transition: all .15s;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .btn-leave:hover { border-color: #f87171; color: #f87171; }
+
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      scroll-behavior: smooth;
+    }
+    #messages::-webkit-scrollbar { width: 5px; }
+    #messages::-webkit-scrollbar-track { background: transparent; }
+    #messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    .msg-row {
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      max-width: 72%;
+      animation: msg-in .2s ease-out;
+    }
+    @keyframes msg-in {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .msg-row.mine { align-self: flex-end; flex-direction: row-reverse; }
+    .msg-row.others { align-self: flex-start; }
+
+    .avatar {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 2px;
+    }
+    .avatar.hidden { opacity: 0; pointer-events: none; }
+
+    .bubble-wrap { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .msg-row.mine .bubble-wrap { align-items: flex-end; }
+    .msg-row.others .bubble-wrap { align-items: flex-start; }
+
+    .bubble-name { font-size: 11px; font-weight: 600; padding: 0 4px; margin-bottom: 2px; }
+
+    .bubble {
+      padding: 10px 14px;
+      border-radius: var(--msg-radius);
+      font-size: 14.5px;
+      line-height: 1.5;
+      word-break: break-word;
+      max-width: 100%;
+    }
+    .msg-row.mine .bubble { background: var(--accent); color: #fff; border-bottom-right-radius: 6px; }
+    .msg-row.others .bubble { background: var(--surface2); color: var(--text); border-bottom-left-radius: 6px; }
+    .bubble-time { font-size: 10px; color: var(--muted); padding: 0 4px; }
+
+    .msg-system {
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      padding: 8px 16px;
+      background: var(--surface);
+      border-radius: 20px;
+      margin: 6px auto;
+      max-width: 80%;
+    }
+
+    .chat-footer {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 14px 16px;
+      display: flex;
+      align-items: flex-end;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    #msg-input {
+      flex: 1;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 11px 18px;
+      color: var(--text);
+      font-size: 15px;
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      resize: none;
+      max-height: 120px;
+      min-height: 46px;
+      line-height: 1.4;
+      transition: border-color .2s;
+    }
+    #msg-input:focus { border-color: var(--accent); }
+    #msg-input::placeholder { color: var(--muted); }
+
+    #send-btn {
+      width: 46px; height: 46px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: opacity .15s, transform .1s;
+    }
+    #send-btn:active { transform: scale(.92); opacity: .9; }
+    #send-btn svg { fill: #fff; }
+
+    .typing-bar { padding: 4px 20px; font-size: 12px; color: var(--muted); height: 22px; flex-shrink: 0; background: var(--bg); }
+
+    .toast {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 13px;
+      padding: 8px 18px;
+      border-radius: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s, transform .2s;
+      z-index: 999;
+      white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    .empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 14px;
+      padding: 40px;
+      text-align: center;
+    }
+    .empty-state .icon { font-size: 40px; }
+
+    @media (max-width: 520px) {
+      .msg-row { max-width: 88%; }
+      .card { padding: 24px 18px; }
+      .chat-header { padding: 12px 14px; }
+      #messages { padding: 14px; }
+    }
+  </style>
 </head>
 <body>
 
-<div id="loading">
-  <div class="load-dots">
-    <div class="load-dot"></div>
-    <div class="load-dot"></div>
-    <div class="load-dot"></div>
+<!-- ══ LOBBY ══════════════════════════════════════════════════ -->
+<div id="lobby">
+  <div class="logo-wrap">
+    <div class="logo-icon">🕶️</div>
+    <div class="logo-name">AnonRoom</div>
+    <div class="logo-sub">Say anything. No one knows who you are.</div>
   </div>
-  <p>gathering thoughts from around the world…</p>
-</div>
 
-<canvas id="canvas"></canvas>
-
-<div id="ui">
-  <div id="header">
-    <h1>The World's Darkroom</h1>
-    <div class="dot"></div>
-  </div>
-  <div id="star-count"><span id="count-num">0</span> <span>thoughts floating</span></div>
-
-  <div id="hint">touch a star to read a thought · they expire with the dawn</div>
-
-  <button id="submit-btn" aria-label="Share a thought">
-    <span class="plus">+</span>
-    share a thought
-  </button>
-
-  <div id="drawer">
-    <div id="drawer-inner">
-      <h2>what are you actually thinking?</h2>
-      <p>anonymous · expires in 24h · one thought per day</p>
-      <textarea id="thought-input" placeholder="it's 2am and…" maxlength="200"></textarea>
-      <div id="char-count">0 / 200</div>
-      <div class="drawer-actions">
-        <button id="send-btn">release it</button>
-        <button id="cancel-btn">never mind</button>
-        <span id="drawer-msg"></span>
-      </div>
+  <div class="card">
+    <div class="card-title">Create a Room</div>
+    <div class="input-group">
+      <input type="text" id="create-room-id" placeholder="Room name (e.g. team-standup)" maxlength="40" autocomplete="off" spellcheck="false" />
     </div>
+    <div class="err-msg" id="create-err"></div>
+    <button class="btn" onclick="createRoom()">✦ Create Room</button>
+
+    <div class="divider">or join existing</div>
+
+    <div class="card-title">Join a Room</div>
+    <div class="input-group">
+      <input type="text" id="join-room-id" placeholder="Enter room code" maxlength="40" autocomplete="off" spellcheck="false" />
+    </div>
+    <div class="err-msg" id="join-err"></div>
+    <button class="btn btn-ghost" onclick="joinRoom()">→ Join Room</button>
   </div>
 
-  <div id="card">
-    <div id="card-inner">
-      <div id="card-meta">
-        <span id="card-time"></span>
-        <button id="card-close" aria-label="Close">✕</button>
-      </div>
-      <div id="card-text"></div>
-      <div id="card-footer">
-        <button id="relate-btn">
-          <span class="heart-icon">♡</span>
-          I feel this
-        </button>
-        <span id="relate-count"></span>
-      </div>
-    </div>
+  <div class="anon-badge">
+    🔒 <strong>Completely anonymous.</strong> No accounts, no names, no tracking.<br>
+    Everyone sees a random color + animal. Even we don't know who's who.
   </div>
 </div>
 
-<div id="toast"></div>
+<!-- ══ CHAT APP ════════════════════════════════════════════════ -->
+<div id="chat-app">
+  <div class="chat-header">
+    <div class="header-left">
+      <div class="room-pill" onclick="copyRoomCode()" title="Click to copy room code">
+        <div class="room-pill-label">
+          <span class="online-dot"></span>
+          <span id="room-label">#room</span>
+        </div>
+      </div>
+      <span class="online-count" id="online-count"></span>
+    </div>
+    <div class="my-identity">
+      <div class="identity-dot" id="my-dot"></div>
+      <span id="my-name-label">You</span>
+    </div>
+    <button class="btn-leave" onclick="leaveRoom()">Leave</button>
+  </div>
 
-<script>
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
+  <div id="messages">
+    <div class="empty-state" id="empty-hint">
+      <div class="icon">🕶️</div>
+      <div>No messages yet.<br>Be the first to say something.</div>
+    </div>
+  </div>
 
-let W, H, dpr;
-let stars = [];
-let thoughts = [];
-let mouseX = 0, mouseY = 0;
-let animFrame;
-let hoveredStar = null;
-let activeStarId = null;
-let pulseEffects = [];
+  <div class="typing-bar" id="typing-bar"></div>
 
-function resize() {
-  dpr = window.devicePixelRatio || 1;
-  W = window.innerWidth;
-  H = window.innerHeight;
-  canvas.width = W * dpr;
-  canvas.height = H * dpr;
-  canvas.style.width = W + 'px';
-  canvas.style.height = H + 'px';
-  ctx.scale(dpr, dpr);
-}
+  <div class="chat-footer">
+    <textarea id="msg-input" rows="1" placeholder="Message…" maxlength="2000"></textarea>
+    <button id="send-btn" onclick="sendMessage()" title="Send">
+      <svg width="20" height="20" viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+    </button>
+  </div>
+</div>
 
-const STAR_COLORS = [
-  { r:255,g:255,b:255 },
-  { r:184,g:196,b:255 },
-  { r:255,g:214,b:165 },
-  { r:200,g:255,b:212 },
-  { r:255,g:200,b:220 },
-];
+<div class="toast" id="toast"></div>
 
-function makeBgStars(n) {
-  const arr = [];
-  for (let i = 0; i < n; i++) {
-    const col = STAR_COLORS[Math.floor(Math.random() * STAR_COLORS.length)];
-    arr.push({
-      x: Math.random(),
-      y: Math.random(),
-      r: 0.3 + Math.random() * 1.0,
-      depth: 0.2 + Math.random() * 0.8,
-      phase: Math.random() * Math.PI * 2,
-      speed: 0.0003 + Math.random() * 0.0008,
-      col,
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getDatabase, ref, push, onValue, off, set, onDisconnect, get, query, orderByChild, limitToLast, remove }
+    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey:            "AIzaSyBh41U_nbTINVXaSRSB4qjPEljU16zOPzI",
+    authDomain:        "sssss-9ec07.firebaseapp.com",
+    databaseURL:       "https://sssss-9ec07-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId:         "sssss-9ec07",
+    storageBucket:     "sssss-9ec07.firebasestorage.app",
+    messagingSenderId: "650031451286",
+    appId:             "1:650031451286:web:a2310d3f8fd9853ca2c6b7"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getDatabase(app);
+
+  // ── IDENTITY ──────────────────────────────────────────────
+  const ANIMALS = ["Fox","Wolf","Owl","Bear","Lynx","Hawk","Deer","Crow","Seal","Mink","Vole","Frog","Kite","Ibis","Newt","Tern","Wren","Bison","Puma","Toad"];
+  const COLORS  = ["#f97316","#22c55e","#3b82f6","#ec4899","#a855f7","#14b8a6","#eab308","#ef4444","#06b6d4","#f59e0b","#10b981","#6366f1","#84cc16","#fb923c","#e879f9","#38bdf8","#4ade80","#fb7185","#c084fc","#34d399"];
+
+  function getMyIdentity() {
+    let id = sessionStorage.getItem('anon_id');
+    if (!id) {
+      const a = ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
+      const c = COLORS[Math.floor(Math.random() * COLORS.length)];
+      id = JSON.stringify({ animal: a, color: c, uid: crypto.randomUUID().slice(0,8) });
+      sessionStorage.setItem('anon_id', id);
+    }
+    return JSON.parse(id);
+  }
+
+  const ME = getMyIdentity();
+  document.getElementById('my-dot').style.background = ME.color;
+  document.getElementById('my-name-label').textContent = `${ME.color.slice(1,4)} ${ME.animal}`;
+
+  // ── STATE ─────────────────────────────────────────────────
+  let currentRoom    = null;
+  let msgListenerRef = null;
+  let presenceRef    = null;
+  let typingTimeout  = null;
+  let lastSenderId   = null;
+  let lastSenderTs   = 0;
+
+  // ── LOBBY ─────────────────────────────────────────────────
+  window.createRoom = async function() {
+    const raw = document.getElementById('create-room-id').value.trim();
+    const err = document.getElementById('create-err');
+    if (!raw) { err.textContent = 'Enter a room name.'; return; }
+    const roomId = slugify(raw);
+    if (roomId.length < 2) { err.textContent = 'Room name too short.'; return; }
+    err.textContent = '';
+    await enterRoom(roomId);
+  };
+
+  window.joinRoom = async function() {
+    const raw = document.getElementById('join-room-id').value.trim();
+    const err = document.getElementById('join-err');
+    if (!raw) { err.textContent = 'Enter a room code.'; return; }
+    const roomId = slugify(raw);
+    err.textContent = '';
+    await enterRoom(roomId);
+  };
+
+  function slugify(s) {
+    return s.toLowerCase().replace(/[^a-z0-9\-_]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
+  }
+
+  // ── ENTER ROOM ────────────────────────────────────────────
+  async function enterRoom(roomId) {
+    currentRoom = roomId;
+
+    presenceRef = ref(db, `rooms/${roomId}/presence/${ME.uid}`);
+    await set(presenceRef, { color: ME.color, animal: ME.animal, ts: Date.now() });
+    onDisconnect(presenceRef).remove();
+
+    document.getElementById('lobby').style.display    = 'none';
+    document.getElementById('chat-app').style.display = 'flex';
+    document.getElementById('room-label').textContent = `#${roomId}`;
+
+    appendSystem(`You joined as ${ME.color.slice(1,4)} ${ME.animal}`);
+
+    // Online count
+    onValue(ref(db, `rooms/${roomId}/presence`), snap => {
+      const n = snap.exists() ? Object.keys(snap.val()).length : 0;
+      document.getElementById('online-count').textContent = `${n} online`;
     });
-  }
-  return arr;
-}
 
-let bgStars = [];
+    // Messages (last 200)
+    msgListenerRef = query(
+      ref(db, `rooms/${roomId}/messages`),
+      orderByChild('ts'),
+      limitToLast(200)
+    );
+    const msgContainer = document.getElementById('messages');
+    let initialLoad = true;
 
-function initBgStars() {
-  bgStars = makeBgStars(500);
-}
-
-function makeThoughtStar(thought) {
-  return {
-    id: thought.id,
-    x: 0.1 + Math.random() * 0.8,
-    y: 0.1 + Math.random() * 0.8,
-    r: 2.5 + Math.random() * 2,
-    depth: 0.5,
-    phase: Math.random() * Math.PI * 2,
-    speed: 0.0005 + Math.random() * 0.0005,
-    col: STAR_COLORS[1],
-    isThought: true,
-    thought,
-    appearing: true,
-    appearProgress: 0,
-    hovered: false,
-  };
-}
-
-function drawScene(ts) {
-  ctx.clearRect(0, 0, W, H);
-
-  const px = (mouseX / W - 0.5);
-  const py = (mouseY / H - 0.5);
-
-  for (const s of bgStars) {
-    const twinkle = 0.4 + 0.6 * Math.abs(Math.sin(ts * s.speed * 1000 + s.phase));
-    const ox = px * s.depth * 18;
-    const oy = py * s.depth * 18;
-    const sx = s.x * W + ox;
-    const sy = s.y * H + oy;
-    ctx.save();
-    ctx.globalAlpha = twinkle * 0.7;
-    ctx.beginPath();
-    ctx.arc(sx, sy, s.r, 0, Math.PI * 2);
-    ctx.fillStyle = `rgb(${s.col.r},${s.col.g},${s.col.b})`;
-    ctx.fill();
-    ctx.restore();
-  }
-
-  hoveredStar = null;
-
-  for (const s of stars) {
-    if (s.appearing) {
-      s.appearProgress = Math.min(1, s.appearProgress + 0.018);
-      if (s.appearProgress >= 1) s.appearing = false;
-    }
-
-    const twinkle = 0.6 + 0.4 * Math.abs(Math.sin(ts * s.speed * 1000 + s.phase));
-    const ox = px * s.depth * 22;
-    const oy = py * s.depth * 22;
-    const sx = s.x * W + ox;
-    const sy = s.y * H + oy;
-
-    const dx = mouseX - sx;
-    const dy = mouseY - sy;
-    const dist = Math.sqrt(dx*dx + dy*dy);
-    const isHovered = dist < 28;
-    if (isHovered) { hoveredStar = s; s.hovered = true; } else { s.hovered = false; }
-    const isActive = s.id === activeStarId;
-
-    const baseAlpha = s.appearProgress;
-    const glow = isHovered || isActive ? 1 : 0;
-    const displayR = s.r * (1 + glow * 0.5) * s.appearProgress;
-
-    ctx.save();
-
-    if (isHovered || isActive) {
-      const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, displayR * 10);
-      grad.addColorStop(0, `rgba(123,110,255,${0.35 * baseAlpha})`);
-      grad.addColorStop(1, `rgba(123,110,255,0)`);
-      ctx.beginPath();
-      ctx.arc(sx, sy, displayR * 10, 0, Math.PI * 2);
-      ctx.fillStyle = grad;
-      ctx.fill();
-    }
-
-    ctx.globalAlpha = (twinkle * 0.8 + 0.2) * baseAlpha * (isHovered || isActive ? 1 : 0.85);
-    const grad2 = ctx.createRadialGradient(sx, sy, 0, sx, sy, displayR * 2.5);
-    grad2.addColorStop(0, `rgba(255,255,255,1)`);
-    grad2.addColorStop(0.4, `rgba(200,196,255,0.8)`);
-    grad2.addColorStop(1, `rgba(123,110,255,0)`);
-    ctx.beginPath();
-    ctx.arc(sx, sy, displayR * 2.5, 0, Math.PI * 2);
-    ctx.fillStyle = grad2;
-    ctx.fill();
-
-    ctx.restore();
-
-    s._screenX = sx;
-    s._screenY = sy;
-  }
-
-  for (let i = pulseEffects.length - 1; i >= 0; i--) {
-    const p = pulseEffects[i];
-    p.progress += 0.025;
-    if (p.progress >= 1) { pulseEffects.splice(i, 1); continue; }
-    const radius = p.progress * 80;
-    const alpha = (1 - p.progress) * 0.6;
-    ctx.save();
-    ctx.strokeStyle = `rgba(255,107,157,${alpha})`;
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
-    ctx.stroke();
-
-    const radius2 = p.progress * 40;
-    const alpha2 = (1 - p.progress) * 0.3;
-    ctx.strokeStyle = `rgba(255,107,157,${alpha2})`;
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, radius2, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.restore();
-  }
-
-  canvas.style.cursor = hoveredStar ? 'pointer' : 'default';
-  animFrame = requestAnimationFrame(drawScene);
-}
-
-function positionCard(sx, sy) {
-  const card = document.getElementById('card');
-  const cw = card.offsetWidth || 420;
-  const ch = card.offsetHeight || 220;
-  let x = sx - cw / 2;
-  let y = sy - ch - 24;
-  x = Math.max(16, Math.min(W - cw - 16, x));
-  y = Math.max(70, Math.min(H - ch - 100, y));
-  card.style.left = x + 'px';
-  card.style.top = y + 'px';
-}
-
-function timeAgo(ts) {
-  const diff = Date.now() - ts;
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  return 'yesterday';
-}
-
-function typewrite(el, text, done) {
-  el.textContent = '';
-  let i = 0;
-  const interval = setInterval(() => {
-    el.textContent += text[i++];
-    if (i >= text.length) { clearInterval(interval); if(done) done(); }
-  }, 28);
-}
-
-let currentRelatedId = null;
-
-function openCard(star) {
-  activeStarId = star.id;
-  const card = document.getElementById('card');
-  const t = star.thought;
-
-  document.getElementById('card-time').textContent = timeAgo(t.createdAt);
-  document.getElementById('card-text').textContent = '';
-  document.getElementById('relate-count').textContent = `${t.heartbeats || 0} felt this`;
-
-  const alreadyRelated = JSON.parse(localStorage.getItem('related_ids') || '[]');
-  const btn = document.getElementById('relate-btn');
-  btn.classList.toggle('pulsed', alreadyRelated.includes(t.id));
-  btn.querySelector('.heart-icon').textContent = alreadyRelated.includes(t.id) ? '♥' : '♡';
-
-  card.style.left = '-9999px';
-  card.style.top = '-9999px';
-  card.classList.add('visible');
-
-  requestAnimationFrame(() => {
-    positionCard(star._screenX, star._screenY);
-    typewrite(document.getElementById('card-text'), t.text);
-  });
-
-  currentRelatedId = t.id;
-}
-
-function closeCard() {
-  activeStarId = null;
-  currentRelatedId = null;
-  document.getElementById('card').classList.remove('visible');
-}
-
-canvas.addEventListener('click', (e) => {
-  if (hoveredStar) {
-    openCard(hoveredStar);
-  } else if (activeStarId) {
-    closeCard();
-  }
-});
-
-canvas.addEventListener('mousemove', (e) => {
-  mouseX = e.clientX;
-  mouseY = e.clientY;
-});
-
-canvas.addEventListener('touchmove', (e) => {
-  mouseX = e.touches[0].clientX;
-  mouseY = e.touches[0].clientY;
-}, { passive: true });
-
-canvas.addEventListener('touchend', (e) => {
-  const tx = e.changedTouches[0].clientX;
-  const ty = e.changedTouches[0].clientY;
-  let tapped = null;
-  for (const s of stars) {
-    const dx = tx - s._screenX;
-    const dy = ty - s._screenY;
-    if (Math.sqrt(dx*dx+dy*dy) < 36) { tapped = s; break; }
-  }
-  if (tapped) openCard(tapped);
-  else if (activeStarId) closeCard();
-}, { passive: true });
-
-document.getElementById('card-close').addEventListener('click', closeCard);
-
-document.getElementById('relate-btn').addEventListener('click', () => {
-  if (!currentRelatedId) return;
-  const alreadyRelated = JSON.parse(localStorage.getItem('related_ids') || '[]');
-  if (alreadyRelated.includes(currentRelatedId)) return;
-
-  alreadyRelated.push(currentRelatedId);
-  localStorage.setItem('related_ids', JSON.stringify(alreadyRelated));
-
-  const btn = document.getElementById('relate-btn');
-  btn.classList.add('pulsed');
-  btn.querySelector('.heart-icon').textContent = '♥';
-
-  const s = stars.find(x => x.id === currentRelatedId);
-  if (s) {
-    pulseEffects.push({ x: s._screenX, y: s._screenY, progress: 0 });
-    s.thought.heartbeats = (s.thought.heartbeats || 0) + 1;
-    document.getElementById('relate-count').textContent = `${s.thought.heartbeats} felt this`;
-    incrementHeartbeat(currentRelatedId);
-  }
-  showToast('a heartbeat sent into the dark');
-});
-
-let drawerOpen = false;
-
-document.getElementById('submit-btn').addEventListener('click', () => {
-  const submitted = localStorage.getItem('submitted_today');
-  const today = new Date().toDateString();
-  if (submitted === today) {
-    showToast('you\'ve already shared a thought tonight');
-    return;
-  }
-  openDrawer();
-});
-
-document.getElementById('cancel-btn').addEventListener('click', closeDrawer);
-
-document.getElementById('thought-input').addEventListener('input', (e) => {
-  const len = e.target.value.length;
-  document.getElementById('char-count').textContent = `${len} / 200`;
-  document.getElementById('send-btn').disabled = len < 3;
-});
-
-document.getElementById('send-btn').addEventListener('click', submitThought);
-
-document.getElementById('thought-input').addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) submitThought();
-});
-
-function openDrawer() {
-  drawerOpen = true;
-  document.getElementById('drawer').classList.add('open');
-  document.getElementById('thought-input').value = '';
-  document.getElementById('char-count').textContent = '0 / 200';
-  document.getElementById('send-btn').disabled = true;
-  document.getElementById('drawer-msg').textContent = '';
-  setTimeout(() => document.getElementById('thought-input').focus(), 500);
-  document.getElementById('hint').style.opacity = '0';
-  document.getElementById('submit-btn').style.opacity = '0';
-}
-
-function closeDrawer() {
-  drawerOpen = false;
-  document.getElementById('drawer').classList.remove('open');
-  document.getElementById('hint').style.opacity = '';
-  document.getElementById('submit-btn').style.opacity = '';
-}
-
-async function submitThought() {
-  const text = document.getElementById('thought-input').value.trim();
-  if (text.length < 3) return;
-
-  const btn = document.getElementById('send-btn');
-  const msg = document.getElementById('drawer-msg');
-  btn.disabled = true;
-  btn.textContent = 'releasing…';
-  msg.textContent = '';
-
-  const thought = {
-    id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
-    text,
-    createdAt: Date.now(),
-    heartbeats: 0,
-    expiresAt: Date.now() + 24 * 60 * 60 * 1000,
-  };
-
-  try {
-    await saveThought(thought);
-    thoughts.push(thought);
-    const newStar = makeThoughtStar(thought);
-    newStar.appearProgress = 0;
-    newStar.appearing = true;
-    stars.push(newStar);
-    updateCount();
-
-    localStorage.setItem('submitted_today', new Date().toDateString());
-    btn.textContent = 'release it';
-    msg.textContent = '✦ your thought is now a star';
-    setTimeout(closeDrawer, 1800);
-  } catch (e) {
-    btn.disabled = false;
-    btn.textContent = 'release it';
-    msg.textContent = 'something went wrong, try again';
-  }
-}
-
-function updateCount() {
-  document.getElementById('count-num').textContent = thoughts.length;
-}
-
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3000);
-}
-
-async function saveThought(thought) {
-  try {
-    await window.storage.set(`thought:${thought.id}`, JSON.stringify(thought), true);
-  } catch(e) { console.warn('storage save failed', e); }
-}
-
-async function incrementHeartbeat(id) {
-  try {
-    const result = await window.storage.get(`thought:${id}`, true);
-    if (result) {
-      const t = JSON.parse(result.value);
-      t.heartbeats = (t.heartbeats || 0) + 1;
-      await window.storage.set(`thought:${id}`, JSON.stringify(t), true);
-    }
-  } catch(e) { console.warn('heartbeat update failed', e); }
-}
-
-async function loadThoughts() {
-  try {
-    const result = await window.storage.list('thought:', true);
-    if (!result || !result.keys) return [];
-    const now = Date.now();
-    const loaded = [];
-    for (const key of result.keys) {
-      try {
-        const item = await window.storage.get(key, true);
-        if (item) {
-          const t = JSON.parse(item.value);
-          if (t.expiresAt > now) {
-            loaded.push(t);
-          } else {
-            await window.storage.delete(key, true);
-          }
+    onValue(msgListenerRef, snap => {
+      if (initialLoad) {
+        msgContainer.innerHTML = '';
+        if (!snap.exists()) {
+          msgContainer.innerHTML = '<div class="empty-state" id="empty-hint"><div class="icon">🕶️</div><div>No messages yet.<br>Be the first to say something.</div></div>';
+        } else {
+          snap.forEach(child => renderMsg(child.val(), false));
+          msgContainer.scrollTop = msgContainer.scrollHeight;
         }
-      } catch(e) {}
-    }
-    return loaded;
-  } catch(e) {
-    console.warn('load failed', e);
-    return [];
-  }
-}
+        initialLoad = false;
+      } else {
+        if (!snap.exists()) return;
+        const all = [];
+        snap.forEach(c => all.push(c.val()));
+        const newest = all[all.length - 1];
+        if (newest) {
+          const existing = msgContainer.querySelector(`[data-ts="${newest.ts}"][data-uid="${newest.uid}"]`);
+          if (!existing) { removeEmpty(); renderMsg(newest, true); }
+        }
+      }
+    });
 
-function seedDemoThoughts() {
-  const demos = [
-    
-  ];
-  const now = Date.now();
-  return demos.map((text, i) => ({
-    id: 'demo_' + i,
-    text,
-    createdAt: now - Math.random() * 8 * 3600000,
-    heartbeats: Math.floor(Math.random() * 40),
-    expiresAt: now + 20 * 3600000,
-  }));
-}
+    // Typing indicator
+    onValue(ref(db, `rooms/${roomId}/typing`), snap => {
+      if (!snap.exists()) { setTypingBar(''); return; }
+      const others = Object.entries(snap.val())
+        .filter(([uid]) => uid !== ME.uid)
+        .filter(([, v]) => Date.now() - v.ts < 4000);
+      if (!others.length) { setTypingBar(''); return; }
+      const names = others.map(([, v]) => `${v.color.slice(1,4)} ${v.animal}`).join(', ');
+      setTypingBar(others.length === 1 ? `${names} is typing…` : `${names} are typing…`);
+    });
 
-async function init() {
-  resize();
-  window.addEventListener('resize', () => { resize(); });
-  initBgStars();
-  requestAnimationFrame(drawScene);
-
-  await new Promise(r => setTimeout(r, 600));
-  thoughts = await loadThoughts();
-
-  if (thoughts.length === 0) {
-    thoughts = seedDemoThoughts();
-    for (const t of thoughts) {
-      await saveThought(t);
-    }
+    // Input handlers
+    const inp = document.getElementById('msg-input');
+    inp.addEventListener('input', () => {
+      inp.style.height = 'auto';
+      inp.style.height = Math.min(inp.scrollHeight, 120) + 'px';
+      handleTyping();
+    });
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    });
+    inp.focus();
   }
 
-  stars = thoughts.map(makeThoughtStar);
+  // ── RENDER MESSAGE ────────────────────────────────────────
+  function renderMsg(data, animate) {
+    if (!data || !data.text) return;
+    const isMe = data.uid === ME.uid;
+    const container = document.getElementById('messages');
+    const now = data.ts || Date.now();
+    const sameCluster = data.uid === lastSenderId && (now - lastSenderTs) < 120000;
+    lastSenderId = data.uid;
+    lastSenderTs = now;
 
-  stars.forEach((s, i) => {
-    const delay = i * 120;
-    setTimeout(() => {
-      s.appearing = true;
-      s.appearProgress = 0;
-    }, delay);
-  });
+    const row = document.createElement('div');
+    row.className = `msg-row ${isMe ? 'mine' : 'others'}`;
+    row.dataset.ts  = data.ts;
+    row.dataset.uid = data.uid;
+    if (!animate) row.style.animation = 'none';
 
-  updateCount();
+    const avatarEl = document.createElement('div');
+    avatarEl.className = `avatar${sameCluster ? ' hidden' : ''}`;
+    avatarEl.style.background = data.color;
+    avatarEl.textContent = data.animal[0];
 
-  const loading = document.getElementById('loading');
-  loading.classList.add('fade');
-  setTimeout(() => loading.style.display = 'none', 900);
-}
+    const wrap = document.createElement('div');
+    wrap.className = 'bubble-wrap';
 
-init();
+    if (!sameCluster && !isMe) {
+      const nameEl = document.createElement('div');
+      nameEl.className = 'bubble-name';
+      nameEl.style.color = data.color;
+      nameEl.textContent = `${data.color.slice(1,4)} ${data.animal}`;
+      wrap.appendChild(nameEl);
+    }
+
+    const bubble = document.createElement('div');
+    bubble.className = 'bubble';
+    bubble.textContent = data.text;
+
+    const timeEl = document.createElement('div');
+    timeEl.className = 'bubble-time';
+    timeEl.textContent = formatTime(data.ts);
+
+    wrap.appendChild(bubble);
+    wrap.appendChild(timeEl);
+
+    if (isMe) { row.appendChild(wrap); row.appendChild(avatarEl); }
+    else       { row.appendChild(avatarEl); row.appendChild(wrap); }
+
+    container.appendChild(row);
+    if (animate || isMe) container.scrollTop = container.scrollHeight;
+  }
+
+  // ── SEND ──────────────────────────────────────────────────
+  window.sendMessage = async function() {
+    const inp  = document.getElementById('msg-input');
+    const text = inp.value.trim();
+    if (!text || !currentRoom) return;
+    inp.value = '';
+    inp.style.height = 'auto';
+    clearTyping();
+
+    const msgsRef = ref(db, `rooms/${currentRoom}/messages`);
+    await push(msgsRef, {
+      text,
+      uid:    ME.uid,
+      color:  ME.color,
+      animal: ME.animal,
+      ts:     Date.now()
+    });
+    pruneOldMessages(msgsRef);
+  };
+
+  async function pruneOldMessages(msgsRef) {
+    const cutoff = Date.now() - 48 * 60 * 60 * 1000;
+    const snap = await get(query(msgsRef, orderByChild('ts'), limitToLast(500)));
+    if (!snap.exists()) return;
+    snap.forEach(child => { if (child.val().ts < cutoff) remove(child.ref); });
+  }
+
+  // ── TYPING ────────────────────────────────────────────────
+  function handleTyping() {
+    if (!currentRoom) return;
+    set(ref(db, `rooms/${currentRoom}/typing/${ME.uid}`), { color: ME.color, animal: ME.animal, ts: Date.now() });
+    clearTimeout(typingTimeout);
+    typingTimeout = setTimeout(clearTyping, 3000);
+  }
+  function clearTyping() {
+    if (!currentRoom) return;
+    clearTimeout(typingTimeout);
+    remove(ref(db, `rooms/${currentRoom}/typing/${ME.uid}`));
+  }
+  function setTypingBar(text) { document.getElementById('typing-bar').textContent = text; }
+
+  // ── LEAVE ─────────────────────────────────────────────────
+  window.leaveRoom = function() {
+    if (msgListenerRef) { off(msgListenerRef); msgListenerRef = null; }
+    if (presenceRef)    { remove(presenceRef); presenceRef = null; }
+    clearTyping();
+    currentRoom = null; lastSenderId = null; lastSenderTs = 0;
+    document.getElementById('messages').innerHTML = '';
+    document.getElementById('msg-input').value = '';
+    document.getElementById('chat-app').style.display = 'none';
+    document.getElementById('lobby').style.display     = 'flex';
+  };
+
+  // ── COPY ROOM LINK ────────────────────────────────────────
+  window.copyRoomCode = function() {
+    const url = `${location.origin}${location.pathname}?room=${currentRoom}`;
+    navigator.clipboard.writeText(url).then(() => showToast('Room link copied! 🔗'));
+  };
+
+  // ── UTILS ─────────────────────────────────────────────────
+  function appendSystem(text) {
+    const el = document.createElement('div');
+    el.className = 'msg-system';
+    el.textContent = text;
+    document.getElementById('messages').appendChild(el);
+  }
+  function removeEmpty() { const h = document.getElementById('empty-hint'); if (h) h.remove(); }
+  function formatTime(ts) {
+    if (!ts) return '';
+    return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2500);
+  }
+
+  // ── AUTO-JOIN FROM URL ────────────────────────────────────
+  const urlRoom = new URLSearchParams(location.search).get('room');
+  if (urlRoom) enterRoom(urlRoom.toLowerCase().replace(/[^a-z0-9\-_]/g,'-'));
+
+  document.getElementById('create-room-id').addEventListener('keydown', e => { if (e.key==='Enter') createRoom(); });
+  document.getElementById('join-room-id').addEventListener('keydown',   e => { if (e.key==='Enter') joinRoom(); });
 </script>
+
 </body>
 </html>

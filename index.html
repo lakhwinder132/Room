@@ -6,354 +6,211 @@
   <title>AnonRoom — Anonymous Group Chat</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
-
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --bg:          #0f0f13;
-      --surface:     #18181f;
-      --surface2:    #22222d;
-      --border:      #2a2a38;
-      --text:        #e8e8f0;
-      --muted:       #6b6b80;
-      --accent:      #7c5cfc;
-      --accent-glow: rgba(124,92,252,.25);
-      --radius:      14px;
-      --msg-radius:  18px;
+      --bg: #0f0f13; --surface: #18181f; --surface2: #22222d; --border: #2a2a38;
+      --text: #e8e8f0; --muted: #6b6b80; --accent: #7c5cfc; --accent-glow: rgba(124,92,252,.25);
+      --radius: 14px; --msg-radius: 18px; --green: #22c55e; --red: #ef4444;
     }
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; font-size: 15px; -webkit-font-smoothing: antialiased; }
 
-    html, body {
-      height: 100%;
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Inter', sans-serif;
-      font-size: 15px;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    #lobby {
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 24px;
-    }
-
+    /* ── LOBBY ── */
+    #lobby { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px; }
     .logo-wrap { margin-bottom: 32px; text-align: center; }
     .logo-icon { font-size: 48px; line-height: 1; margin-bottom: 10px; }
-    .logo-name {
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 28px;
-      font-weight: 600;
-      letter-spacing: -1px;
-      background: linear-gradient(135deg, #a78bfa, #7c5cfc, #5b8dfc);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
+    .logo-name { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 600; letter-spacing: -1px; background: linear-gradient(135deg, #a78bfa, #7c5cfc, #5b8dfc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
     .logo-sub { color: var(--muted); font-size: 13px; margin-top: 4px; }
-
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 32px;
-      width: 100%;
-      max-width: 400px;
-    }
-    .card-title { font-size: 17px; font-weight: 600; margin-bottom: 20px; color: var(--text); }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 32px; width: 100%; max-width: 400px; }
+    .card-title { font-size: 17px; font-weight: 600; margin-bottom: 20px; }
     .input-group { display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px; }
-
-    input[type="text"] {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 13px 16px;
-      color: var(--text);
-      font-size: 15px;
-      font-family: 'Inter', sans-serif;
-      outline: none;
-      transition: border-color .2s, box-shadow .2s;
-      width: 100%;
-    }
+    input[type="text"] { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 13px 16px; color: var(--text); font-size: 15px; font-family: 'Inter', sans-serif; outline: none; transition: border-color .2s, box-shadow .2s; width: 100%; }
     input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
     input[type="text"]::placeholder { color: var(--muted); }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 7px;
-      background: var(--accent);
-      color: #fff;
-      border: none;
-      border-radius: 10px;
-      padding: 13px 20px;
-      font-size: 15px;
-      font-weight: 600;
-      font-family: 'Inter', sans-serif;
-      cursor: pointer;
-      width: 100%;
-      transition: opacity .15s, transform .1s;
-    }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; background: var(--accent); color: #fff; border: none; border-radius: 10px; padding: 13px 20px; font-size: 15px; font-weight: 600; font-family: 'Inter', sans-serif; cursor: pointer; width: 100%; transition: opacity .15s, transform .1s; }
     .btn:active { transform: scale(.98); opacity: .9; }
     .btn-ghost { background: var(--surface2); color: var(--text); }
     .btn-ghost:hover { background: var(--border); }
-
-    .divider {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin: 20px 0;
-      color: var(--muted);
-      font-size: 12px;
-    }
+    .divider { display: flex; align-items: center; gap: 12px; margin: 20px 0; color: var(--muted); font-size: 12px; }
     .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
-
-    .anon-badge {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px 14px;
-      font-size: 12px;
-      color: var(--muted);
-      margin-top: 20px;
-      text-align: center;
-      line-height: 1.5;
-      width: 100%;
-      max-width: 400px;
-    }
+    .anon-badge { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: var(--muted); margin-top: 20px; text-align: center; line-height: 1.5; width: 100%; max-width: 400px; }
     .anon-badge strong { color: var(--text); }
-
     .err-msg { color: #f87171; font-size: 13px; margin-top: 8px; min-height: 18px; }
 
-    /* ── CHAT ── */
+    /* ── CHAT APP ── */
     #chat-app { display: none; height: 100vh; flex-direction: column; }
-
-    .chat-header {
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      padding: 14px 20px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-shrink: 0;
-      gap: 12px;
-    }
+    .chat-header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 20px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; gap: 12px; }
     .header-left { display: flex; align-items: center; gap: 12px; min-width: 0; }
-    .room-pill {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 6px 12px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--accent);
-      cursor: pointer;
-      white-space: nowrap;
-      transition: background .15s;
-      flex-shrink: 0;
-    }
+    .room-pill { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; color: var(--accent); cursor: pointer; white-space: nowrap; transition: background .15s; flex-shrink: 0; }
     .room-pill:hover { background: var(--border); }
     .room-pill-label { display: flex; align-items: center; gap: 6px; }
-    .online-dot {
-      width: 7px; height: 7px;
-      background: #22c55e;
-      border-radius: 50%;
-      flex-shrink: 0;
-      animation: pulse-green 2s infinite;
-    }
-    @keyframes pulse-green {
-      0%,100% { box-shadow: 0 0 0 0 rgba(34,197,94,.5); }
-      50%      { box-shadow: 0 0 0 4px rgba(34,197,94,0); }
-    }
+    .online-dot { width: 7px; height: 7px; background: var(--green); border-radius: 50%; flex-shrink: 0; animation: pulse-green 2s infinite; }
+    @keyframes pulse-green { 0%,100% { box-shadow: 0 0 0 0 rgba(34,197,94,.5); } 50% { box-shadow: 0 0 0 4px rgba(34,197,94,0); } }
     .online-count { font-size: 12px; color: var(--muted); white-space: nowrap; }
+    .header-right { display: flex; align-items: center; gap: 10px; }
     .my-identity { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); flex-shrink: 0; }
     .identity-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-    .btn-leave {
-      background: none;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 6px 12px;
-      color: var(--muted);
-      font-size: 13px;
-      font-family: 'Inter', sans-serif;
-      cursor: pointer;
-      transition: all .15s;
-      white-space: nowrap;
-      flex-shrink: 0;
-    }
+    .icon-btn { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; color: var(--muted); font-size: 16px; cursor: pointer; transition: all .15s; display: flex; align-items: center; justify-content: center; }
+    .icon-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-leave { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; color: var(--muted); font-size: 13px; font-family: 'Inter', sans-serif; cursor: pointer; transition: all .15s; white-space: nowrap; flex-shrink: 0; }
     .btn-leave:hover { border-color: #f87171; color: #f87171; }
 
-    #messages {
-      flex: 1;
-      overflow-y: auto;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      scroll-behavior: smooth;
-    }
+    /* Search bar */
+    #search-bar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 10px 16px; display: none; gap: 10px; align-items: center; flex-shrink: 0; }
+    #search-bar.open { display: flex; }
+    #search-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 8px 14px; color: var(--text); font-size: 14px; font-family: 'Inter', sans-serif; outline: none; }
+    #search-input:focus { border-color: var(--accent); }
+    .search-close { background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer; padding: 4px; line-height: 1; }
+
+    /* Messages */
+    #messages { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 4px; scroll-behavior: smooth; }
     #messages::-webkit-scrollbar { width: 5px; }
     #messages::-webkit-scrollbar-track { background: transparent; }
     #messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
-    .msg-row {
-      display: flex;
-      align-items: flex-end;
-      gap: 10px;
-      max-width: 72%;
-      animation: msg-in .2s ease-out;
-    }
-    @keyframes msg-in {
-      from { opacity: 0; transform: translateY(8px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
+    .msg-row { display: flex; align-items: flex-end; gap: 10px; max-width: 72%; animation: msg-in .2s ease-out; position: relative; }
+    @keyframes msg-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
     .msg-row.mine { align-self: flex-end; flex-direction: row-reverse; }
     .msg-row.others { align-self: flex-start; }
+    .msg-row.highlight-flash { animation: flash .6s ease-out; }
+    @keyframes flash { 0%,100% { background: transparent; } 50% { background: var(--accent-glow); border-radius: 12px; } }
 
-    .avatar {
-      width: 30px; height: 30px;
-      border-radius: 50%;
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 13px;
-      font-weight: 700;
-      color: #fff;
-      margin-bottom: 2px;
-    }
+    .avatar { width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 2px; }
     .avatar.hidden { opacity: 0; pointer-events: none; }
 
     .bubble-wrap { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
     .msg-row.mine .bubble-wrap { align-items: flex-end; }
     .msg-row.others .bubble-wrap { align-items: flex-start; }
-
     .bubble-name { font-size: 11px; font-weight: 600; padding: 0 4px; margin-bottom: 2px; }
 
-    .bubble {
-      padding: 10px 14px;
-      border-radius: var(--msg-radius);
-      font-size: 14.5px;
-      line-height: 1.5;
-      word-break: break-word;
-      max-width: 100%;
-    }
+    /* Reply quote strip */
+    .reply-quote { background: rgba(255,255,255,.07); border-left: 3px solid var(--accent); border-radius: 8px; padding: 6px 10px; margin-bottom: 4px; font-size: 12px; color: var(--muted); cursor: pointer; max-width: 260px; overflow: hidden; }
+    .reply-quote .rq-name { font-weight: 600; color: var(--accent); margin-bottom: 2px; font-size: 11px; }
+    .reply-quote .rq-text { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .bubble { padding: 10px 14px; border-radius: var(--msg-radius); font-size: 14.5px; line-height: 1.5; word-break: break-word; max-width: 100%; position: relative; }
     .msg-row.mine .bubble { background: var(--accent); color: #fff; border-bottom-right-radius: 6px; }
     .msg-row.others .bubble { background: var(--surface2); color: var(--text); border-bottom-left-radius: 6px; }
-    .bubble-time { font-size: 10px; color: var(--muted); padding: 0 4px; }
+    .bubble.img-bubble { padding: 4px; background: transparent !important; }
+    .bubble.img-bubble img { max-width: 260px; max-height: 320px; border-radius: 12px; display: block; cursor: pointer; transition: opacity .15s; }
+    .bubble.img-bubble img:hover { opacity: .9; }
 
-    .msg-system {
-      text-align: center;
-      color: var(--muted);
-      font-size: 12px;
-      padding: 8px 16px;
-      background: var(--surface);
-      border-radius: 20px;
-      margin: 6px auto;
-      max-width: 80%;
-    }
+    /* Seen receipt */
+    .bubble-meta { display: flex; align-items: center; gap: 5px; padding: 0 4px; }
+    .msg-row.mine .bubble-meta { justify-content: flex-end; }
+    .bubble-time { font-size: 10px; color: var(--muted); }
+    .seen-ticks { font-size: 12px; color: var(--muted); line-height: 1; }
+    .seen-ticks.seen { color: #60a5fa; }
 
-    .chat-footer {
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-      padding: 14px 16px;
-      display: flex;
-      align-items: flex-end;
-      gap: 10px;
-      flex-shrink: 0;
-    }
-    #msg-input {
-      flex: 1;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 22px;
-      padding: 11px 18px;
-      color: var(--text);
-      font-size: 15px;
-      font-family: 'Inter', sans-serif;
-      outline: none;
-      resize: none;
-      max-height: 120px;
-      min-height: 46px;
-      line-height: 1.4;
-      transition: border-color .2s;
-    }
+    /* Reactions */
+    .reactions-bar { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+    .reaction-pill { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 2px 8px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all .15s; user-select: none; }
+    .reaction-pill:hover { border-color: var(--accent); background: var(--accent-glow); }
+    .reaction-pill.mine-reaction { border-color: var(--accent); background: var(--accent-glow); }
+    .reaction-count { font-size: 11px; color: var(--muted); }
+
+    /* Emoji picker */
+    .emoji-picker { position: absolute; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 8px; display: flex; gap: 4px; z-index: 100; bottom: calc(100% + 8px); box-shadow: 0 8px 32px rgba(0,0,0,.4); }
+    .msg-row.mine .emoji-picker { right: 0; }
+    .msg-row.others .emoji-picker { left: 0; }
+    .ep-emoji { font-size: 20px; cursor: pointer; padding: 4px 6px; border-radius: 8px; transition: background .1s; line-height: 1; }
+    .ep-emoji:hover { background: var(--surface2); }
+
+    /* Hover action bar */
+    .msg-actions { position: absolute; top: 50%; transform: translateY(-50%); display: none; gap: 4px; z-index: 10; }
+    .msg-row.mine .msg-actions { left: -90px; flex-direction: row-reverse; }
+    .msg-row.others .msg-actions { right: -90px; }
+    .msg-row:hover .msg-actions { display: flex; }
+    .action-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 5px 8px; font-size: 14px; cursor: pointer; color: var(--muted); transition: all .15s; }
+    .action-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* Voice note */
+    .voice-bubble { display: flex; align-items: center; gap: 10px; padding: 10px 14px; min-width: 200px; }
+    .voice-play-btn { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,.2); border: none; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: inherit; }
+    .voice-waveform { flex: 1; height: 28px; display: flex; align-items: center; gap: 2px; }
+    .voice-waveform span { display: inline-block; width: 3px; border-radius: 2px; background: rgba(255,255,255,.5); animation: none; }
+    .voice-waveform.playing span { animation: wave 0.8s ease-in-out infinite; }
+    .voice-waveform.playing span:nth-child(2) { animation-delay: .1s; }
+    .voice-waveform.playing span:nth-child(3) { animation-delay: .2s; }
+    .voice-waveform.playing span:nth-child(4) { animation-delay: .3s; }
+    .voice-waveform.playing span:nth-child(5) { animation-delay: .15s; }
+    .voice-waveform.playing span:nth-child(6) { animation-delay: .25s; }
+    .voice-waveform.playing span:nth-child(7) { animation-delay: .05s; }
+    .voice-waveform.playing span:nth-child(8) { animation-delay: .35s; }
+    @keyframes wave { 0%,100% { transform: scaleY(.4); } 50% { transform: scaleY(1); } }
+    .voice-duration { font-size: 11px; opacity: .7; flex-shrink: 0; }
+
+    .msg-system { text-align: center; color: var(--muted); font-size: 12px; padding: 8px 16px; background: var(--surface); border-radius: 20px; margin: 6px auto; max-width: 80%; }
+
+    /* Reply preview bar */
+    #reply-bar { display: none; background: var(--surface); border-top: 1px solid var(--border); padding: 10px 16px; flex-direction: row; align-items: center; gap: 10px; flex-shrink: 0; }
+    #reply-bar.open { display: flex; }
+    .reply-bar-strip { flex: 1; border-left: 3px solid var(--accent); padding-left: 10px; min-width: 0; }
+    .reply-bar-name { font-size: 11px; font-weight: 600; color: var(--accent); }
+    .reply-bar-text { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .reply-close { background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer; }
+
+    /* Recording bar */
+    #record-bar { display: none; background: var(--surface); border-top: 1px solid var(--border); padding: 12px 16px; align-items: center; gap: 12px; flex-shrink: 0; }
+    #record-bar.open { display: flex; }
+    .rec-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--red); animation: blink 1s infinite; flex-shrink: 0; }
+    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: .2; } }
+    .rec-timer { font-size: 14px; font-weight: 600; color: var(--text); flex: 1; }
+    .rec-cancel { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; color: var(--muted); font-size: 13px; cursor: pointer; }
+    .rec-send { background: var(--green); border: none; border-radius: 8px; padding: 6px 12px; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer; }
+
+    /* Footer */
+    .chat-footer { background: var(--surface); border-top: 1px solid var(--border); padding: 10px 12px; display: flex; align-items: flex-end; gap: 8px; flex-shrink: 0; }
+    #img-preview-bar { display: none; background: var(--surface); border-top: 1px solid var(--border); padding: 10px 16px; align-items: center; gap: 12px; flex-shrink: 0; }
+    #img-preview-bar img { height: 60px; border-radius: 8px; object-fit: cover; }
+    #img-preview-bar .remove-img { background: #ef4444; border: none; border-radius: 50%; width: 22px; height: 22px; color: #fff; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    #img-preview-bar .preview-label { font-size: 12px; color: var(--muted); flex: 1; }
+    #msg-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 22px; padding: 11px 18px; color: var(--text); font-size: 15px; font-family: 'Inter', sans-serif; outline: none; resize: none; max-height: 120px; min-height: 46px; line-height: 1.4; transition: border-color .2s; }
     #msg-input:focus { border-color: var(--accent); }
     #msg-input::placeholder { color: var(--muted); }
-
-    #send-btn {
-      width: 46px; height: 46px;
-      border-radius: 50%;
-      background: var(--accent);
-      border: none;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      transition: opacity .15s, transform .1s;
-    }
+    .foot-btn { width: 46px; height: 46px; border-radius: 50%; background: var(--surface2); border: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background .15s, border-color .15s; font-size: 18px; color: var(--muted); }
+    .foot-btn:hover { background: var(--border); }
+    .foot-btn.active { border-color: var(--red); color: var(--red); background: rgba(239,68,68,.1); }
+    #send-btn { width: 46px; height: 46px; border-radius: 50%; background: var(--accent); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: opacity .15s, transform .1s; }
     #send-btn:active { transform: scale(.92); opacity: .9; }
-    #send-btn svg { fill: #fff; }
-
+    #img-file { display: none; }
+    .uploading-bar { padding: 4px 20px; font-size: 12px; color: var(--accent); height: 22px; flex-shrink: 0; background: var(--bg); display: none; }
     .typing-bar { padding: 4px 20px; font-size: 12px; color: var(--muted); height: 22px; flex-shrink: 0; background: var(--bg); }
 
-    .toast {
-      position: fixed;
-      bottom: 80px;
-      left: 50%;
-      transform: translateX(-50%) translateY(20px);
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      color: var(--text);
-      font-size: 13px;
-      padding: 8px 18px;
-      border-radius: 20px;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity .2s, transform .2s;
-      z-index: 999;
-      white-space: nowrap;
-    }
+    /* Lightbox */
+    #lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.88); z-index: 1000; align-items: center; justify-content: center; cursor: zoom-out; }
+    #lightbox.open { display: flex; }
+    #lightbox img { max-width: 92vw; max-height: 92vh; border-radius: 10px; }
+
+    /* Toast */
+    .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-size: 13px; padding: 8px 18px; border-radius: 20px; opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; z-index: 999; white-space: nowrap; }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-    .empty-state {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      color: var(--muted);
-      font-size: 14px;
-      padding: 40px;
-      text-align: center;
-    }
+    .empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--muted); font-size: 14px; padding: 40px; text-align: center; }
     .empty-state .icon { font-size: 40px; }
+
+    /* Search highlight */
+    .search-highlight { background: rgba(124,92,252,.35); border-radius: 3px; }
 
     @media (max-width: 520px) {
       .msg-row { max-width: 88%; }
       .card { padding: 24px 18px; }
       .chat-header { padding: 12px 14px; }
       #messages { padding: 14px; }
+      .bubble.img-bubble img { max-width: 200px; }
+      .msg-actions { display: none !important; }
     }
   </style>
 </head>
 <body>
 
-<!-- ══ LOBBY ══════════════════════════════════════════════════ -->
+<!-- ══ LOBBY ══ -->
 <div id="lobby">
   <div class="logo-wrap">
     <div class="logo-icon">🕶️</div>
     <div class="logo-name">AnonRoom</div>
     <div class="logo-sub">Say anything. No one knows who you are.</div>
   </div>
-
   <div class="card">
     <div class="card-title">Create a Room</div>
     <div class="input-group">
@@ -361,9 +218,7 @@
     </div>
     <div class="err-msg" id="create-err"></div>
     <button class="btn" onclick="createRoom()">✦ Create Room</button>
-
     <div class="divider">or join existing</div>
-
     <div class="card-title">Join a Room</div>
     <div class="input-group">
       <input type="text" id="join-room-id" placeholder="Enter room code" maxlength="40" autocomplete="off" spellcheck="false" />
@@ -371,14 +226,10 @@
     <div class="err-msg" id="join-err"></div>
     <button class="btn btn-ghost" onclick="joinRoom()">→ Join Room</button>
   </div>
-
-  <div class="anon-badge">
-    🔒 <strong>Completely anonymous.</strong> No accounts, no names, no tracking.<br>
-    Everyone sees a random color + animal. Even we don't know who's who.
-  </div>
+  <div class="anon-badge">🔒 <strong>Completely anonymous.</strong> No accounts, no names, no tracking.<br>Everyone sees a random color + animal. Even we don't know who's who.</div>
 </div>
 
-<!-- ══ CHAT APP ════════════════════════════════════════════════ -->
+<!-- ══ CHAT APP ══ -->
 <div id="chat-app">
   <div class="chat-header">
     <div class="header-left">
@@ -390,11 +241,19 @@
       </div>
       <span class="online-count" id="online-count"></span>
     </div>
-    <div class="my-identity">
-      <div class="identity-dot" id="my-dot"></div>
-      <span id="my-name-label">You</span>
+    <div class="header-right">
+      <div class="my-identity">
+        <div class="identity-dot" id="my-dot"></div>
+        <span id="my-name-label">You</span>
+      </div>
+      <button class="icon-btn" onclick="toggleSearch()" title="Search messages">🔍</button>
+      <button class="btn-leave" onclick="leaveRoom()">Leave</button>
     </div>
-    <button class="btn-leave" onclick="leaveRoom()">Leave</button>
+  </div>
+
+  <div id="search-bar">
+    <input type="text" id="search-input" placeholder="Search messages…" oninput="doSearch(this.value)" />
+    <button class="search-close" onclick="toggleSearch()">✕</button>
   </div>
 
   <div id="messages">
@@ -405,38 +264,72 @@
   </div>
 
   <div class="typing-bar" id="typing-bar"></div>
+  <div class="uploading-bar" id="uploading-bar">📤 Uploading image…</div>
+
+  <!-- Reply preview -->
+  <div id="reply-bar">
+    <div class="reply-bar-strip">
+      <div class="reply-bar-name" id="reply-bar-name"></div>
+      <div class="reply-bar-text" id="reply-bar-text"></div>
+    </div>
+    <button class="reply-close" onclick="clearReply()">✕</button>
+  </div>
+
+  <!-- Image preview -->
+  <div id="img-preview-bar">
+    <img id="img-preview-thumb" src="" alt="preview" />
+    <span class="preview-label">Image ready to send</span>
+    <button class="remove-img" onclick="clearImageSelection()" title="Remove">✕</button>
+  </div>
+
+  <!-- Recording bar -->
+  <div id="record-bar">
+    <div class="rec-dot"></div>
+    <div class="rec-timer" id="rec-timer">0:00</div>
+    <button class="rec-cancel" onclick="cancelRecording()">✕ Cancel</button>
+    <button class="rec-send" onclick="sendRecording()">✓ Send</button>
+  </div>
 
   <div class="chat-footer">
+    <button class="foot-btn" onclick="document.getElementById('img-file').click()" title="Send image">📷</button>
+    <input type="file" id="img-file" accept="image/*" onchange="handleImageSelect(event)" />
+    <button class="foot-btn" id="mic-btn" onclick="toggleRecording()" title="Voice note">🎤</button>
     <textarea id="msg-input" rows="1" placeholder="Message…" maxlength="2000"></textarea>
     <button id="send-btn" onclick="sendMessage()" title="Send">
-      <svg width="20" height="20" viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="#fff"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg>
     </button>
   </div>
 </div>
 
+<div id="lightbox" onclick="closeLightbox()">
+  <img id="lightbox-img" src="" alt="full image" />
+</div>
 <div class="toast" id="toast"></div>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-  import { getDatabase, ref, push, onValue, off, set, onDisconnect, get, query, orderByChild, limitToLast, remove }
+  import { getDatabase, ref, push, onValue, off, set, onDisconnect, get, query, orderByChild, limitToLast, remove, update }
     from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+  import { getStorage, ref as sref, uploadBytes, getDownloadURL }
+    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
   const firebaseConfig = {
-    apiKey:            "AIzaSyBh41U_nbTINVXaSRSB4qjPEljU16zOPzI",
-    authDomain:        "sssss-9ec07.firebaseapp.com",
-    databaseURL:       "https://sssss-9ec07-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId:         "sssss-9ec07",
-    storageBucket:     "sssss-9ec07.firebasestorage.app",
+    apiKey: "AIzaSyBh41U_nbTINVXaSRSB4qjPEljU16zOPzI",
+    authDomain: "sssss-9ec07.firebaseapp.com",
+    databaseURL: "https://sssss-9ec07-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "sssss-9ec07",
+    storageBucket: "sssss-9ec07.firebasestorage.app",
     messagingSenderId: "650031451286",
-    appId:             "1:650031451286:web:a2310d3f8fd9853ca2c6b7"
+    appId: "1:650031451286:web:a2310d3f8fd9853ca2c6b7"
   };
 
   const app = initializeApp(firebaseConfig);
-  const db  = getDatabase(app);
+  const db = getDatabase(app);
+  const storage = getStorage(app);
 
-  // ── IDENTITY ──────────────────────────────────────────────
   const ANIMALS = ["Fox","Wolf","Owl","Bear","Lynx","Hawk","Deer","Crow","Seal","Mink","Vole","Frog","Kite","Ibis","Newt","Tern","Wren","Bison","Puma","Toad"];
   const COLORS  = ["#f97316","#22c55e","#3b82f6","#ec4899","#a855f7","#14b8a6","#eab308","#ef4444","#06b6d4","#f59e0b","#10b981","#6366f1","#84cc16","#fb923c","#e879f9","#38bdf8","#4ade80","#fb7185","#c084fc","#34d399"];
+  const QUICK_EMOJI = ["👍","❤️","😂","😮","😢","🔥"];
 
   function getMyIdentity() {
     let id = sessionStorage.getItem('anon_id');
@@ -453,15 +346,133 @@
   document.getElementById('my-dot').style.background = ME.color;
   document.getElementById('my-name-label').textContent = `${ME.color.slice(1,4)} ${ME.animal}`;
 
-  // ── STATE ─────────────────────────────────────────────────
-  let currentRoom    = null;
-  let msgListenerRef = null;
-  let presenceRef    = null;
-  let typingTimeout  = null;
-  let lastSenderId   = null;
-  let lastSenderTs   = 0;
+  let currentRoom = null, msgListenerRef = null, presenceRef = null;
+  let typingTimeout = null, lastSenderId = null, lastSenderTs = 0;
+  let selectedFile = null, replyTo = null;
+  let mediaRecorder = null, audioChunks = [], recInterval = null, recSeconds = 0;
+  let allMessages = {}; // msgKey → data (for search & reactions)
 
-  // ── LOBBY ─────────────────────────────────────────────────
+  // ── IMAGE SELECT ──
+  window.handleImageSelect = function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { showToast('Image too large (max 5MB)'); return; }
+    selectedFile = file;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      document.getElementById('img-preview-thumb').src = ev.target.result;
+      document.getElementById('img-preview-bar').style.display = 'flex';
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+  window.clearImageSelection = function() {
+    selectedFile = null;
+    document.getElementById('img-preview-bar').style.display = 'none';
+    document.getElementById('img-preview-thumb').src = '';
+  };
+
+  // ── REPLY ──
+  window.setReply = function(key, data) {
+    replyTo = { key, uid: data.uid, animal: data.animal, color: data.color, text: data.text || (data.imageUrl ? '📷 Photo' : data.voiceUrl ? '🎤 Voice note' : '') };
+    document.getElementById('reply-bar-name').textContent = `${data.color.slice(1,4)} ${data.animal}`;
+    document.getElementById('reply-bar-text').textContent = replyTo.text;
+    document.getElementById('reply-bar').classList.add('open');
+    document.getElementById('msg-input').focus();
+  };
+  window.clearReply = function() {
+    replyTo = null;
+    document.getElementById('reply-bar').classList.remove('open');
+  };
+
+  // ── VOICE RECORDING ──
+  window.toggleRecording = async function() {
+    if (mediaRecorder && mediaRecorder.state === 'recording') return;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunks = [];
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+      mediaRecorder.start(100);
+      recSeconds = 0;
+      document.getElementById('rec-timer').textContent = '0:00';
+      document.getElementById('record-bar').classList.add('open');
+      document.getElementById('mic-btn').classList.add('active');
+      recInterval = setInterval(() => {
+        recSeconds++;
+        const m = Math.floor(recSeconds/60), s = recSeconds%60;
+        document.getElementById('rec-timer').textContent = `${m}:${s.toString().padStart(2,'0')}`;
+        if (recSeconds >= 120) window.sendRecording();
+      }, 1000);
+    } catch { showToast('Microphone access denied'); }
+  };
+  window.cancelRecording = function() {
+    stopRecording();
+    audioChunks = [];
+  };
+  window.sendRecording = async function() {
+    if (!mediaRecorder) return;
+    mediaRecorder.stop();
+    mediaRecorder.stream.getTracks().forEach(t => t.stop());
+    await new Promise(r => setTimeout(r, 200));
+    const blob = new Blob(audioChunks, { type: 'audio/webm' });
+    stopRecording();
+    if (blob.size < 1000) return;
+    await uploadVoice(blob);
+  };
+  function stopRecording() {
+    clearInterval(recInterval);
+    document.getElementById('record-bar').classList.remove('open');
+    document.getElementById('mic-btn').classList.remove('active');
+    mediaRecorder = null;
+  }
+  async function uploadVoice(blob) {
+    const bar = document.getElementById('uploading-bar');
+    bar.style.display = 'block';
+    bar.textContent = '🎤 Uploading voice note…';
+    try {
+      const filename = `rooms/${currentRoom}/voice_${Date.now()}_${ME.uid}.webm`;
+      const storageRef = sref(storage, filename);
+      await uploadBytes(storageRef, blob);
+      const voiceUrl = await getDownloadURL(storageRef);
+      const msgData = { voiceUrl, duration: recSeconds, uid: ME.uid, color: ME.color, animal: ME.animal, ts: Date.now() };
+      if (replyTo) { msgData.replyTo = replyTo; clearReply(); }
+      const msgsRef = ref(db, `rooms/${currentRoom}/messages`);
+      await push(msgsRef, msgData);
+    } catch (err) { showToast('Failed to upload voice note'); console.error(err); }
+    finally { bar.style.display = 'none'; }
+  }
+
+  // ── SEARCH ──
+  window.toggleSearch = function() {
+    const bar = document.getElementById('search-bar');
+    bar.classList.toggle('open');
+    if (bar.classList.contains('open')) { document.getElementById('search-input').focus(); }
+    else { document.getElementById('search-input').value = ''; doSearch(''); }
+  };
+  window.doSearch = function(q) {
+    const rows = document.querySelectorAll('.msg-row, .msg-system');
+    rows.forEach(row => {
+      if (!q) { row.style.display = ''; clearHighlights(row); return; }
+      const text = row.textContent.toLowerCase();
+      if (text.includes(q.toLowerCase())) { row.style.display = ''; highlightText(row, q); }
+      else { row.style.display = 'none'; }
+    });
+  };
+  function highlightText(el, q) {
+    const bubbles = el.querySelectorAll('.bubble');
+    bubbles.forEach(b => {
+      if (b.querySelector('img') || b.querySelector('.voice-bubble')) return;
+      const html = b.textContent;
+      const re = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi');
+      b.innerHTML = html.replace(re, '<mark class="search-highlight">$1</mark>');
+    });
+  }
+  function clearHighlights(el) {
+    el.querySelectorAll('mark.search-highlight').forEach(m => { m.replaceWith(m.textContent); });
+  }
+
+  // ── LOBBY ──
   window.createRoom = async function() {
     const raw = document.getElementById('create-room-id').value.trim();
     const err = document.getElementById('create-err');
@@ -471,98 +482,105 @@
     err.textContent = '';
     await enterRoom(roomId);
   };
-
   window.joinRoom = async function() {
     const raw = document.getElementById('join-room-id').value.trim();
     const err = document.getElementById('join-err');
     if (!raw) { err.textContent = 'Enter a room code.'; return; }
-    const roomId = slugify(raw);
     err.textContent = '';
-    await enterRoom(roomId);
+    await enterRoom(slugify(raw));
   };
+  function slugify(s) { return s.toLowerCase().replace(/[^a-z0-9\-_]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,''); }
 
-  function slugify(s) {
-    return s.toLowerCase().replace(/[^a-z0-9\-_]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,'');
-  }
-
-  // ── ENTER ROOM ────────────────────────────────────────────
+  // ── ENTER ROOM ──
   async function enterRoom(roomId) {
     currentRoom = roomId;
-
     presenceRef = ref(db, `rooms/${roomId}/presence/${ME.uid}`);
     await set(presenceRef, { color: ME.color, animal: ME.animal, ts: Date.now() });
     onDisconnect(presenceRef).remove();
-
-    document.getElementById('lobby').style.display    = 'none';
+    document.getElementById('lobby').style.display = 'none';
     document.getElementById('chat-app').style.display = 'flex';
     document.getElementById('room-label').textContent = `#${roomId}`;
-
     appendSystem(`You joined as ${ME.color.slice(1,4)} ${ME.animal}`);
 
-    // Online count
     onValue(ref(db, `rooms/${roomId}/presence`), snap => {
       const n = snap.exists() ? Object.keys(snap.val()).length : 0;
       document.getElementById('online-count').textContent = `${n} online`;
+      // mark all visible messages as seen
+      if (n > 1) markAllSeen();
     });
 
-    // Messages (last 200)
-    msgListenerRef = query(
-      ref(db, `rooms/${roomId}/messages`),
-      orderByChild('ts'),
-      limitToLast(200)
-    );
+    msgListenerRef = query(ref(db, `rooms/${roomId}/messages`), orderByChild('ts'), limitToLast(200));
     const msgContainer = document.getElementById('messages');
     let initialLoad = true;
 
     onValue(msgListenerRef, snap => {
       if (initialLoad) {
         msgContainer.innerHTML = '';
+        allMessages = {};
         if (!snap.exists()) {
           msgContainer.innerHTML = '<div class="empty-state" id="empty-hint"><div class="icon">🕶️</div><div>No messages yet.<br>Be the first to say something.</div></div>';
         } else {
-          snap.forEach(child => renderMsg(child.val(), false));
+          snap.forEach(child => { allMessages[child.key] = child.val(); renderMsg(child.key, child.val(), false); });
           msgContainer.scrollTop = msgContainer.scrollHeight;
         }
         initialLoad = false;
       } else {
         if (!snap.exists()) return;
-        const all = [];
-        snap.forEach(c => all.push(c.val()));
-        const newest = all[all.length - 1];
-        if (newest) {
-          const existing = msgContainer.querySelector(`[data-ts="${newest.ts}"][data-uid="${newest.uid}"]`);
-          if (!existing) { removeEmpty(); renderMsg(newest, true); }
-        }
+        const keys = [];
+        snap.forEach(c => keys.push({ key: c.key, val: c.val() }));
+        // update reactions on existing messages
+        keys.forEach(({ key, val }) => {
+          const old = allMessages[key];
+          if (old) {
+            // check if reactions changed
+            const oldR = JSON.stringify(old.reactions || {});
+            const newR = JSON.stringify(val.reactions || {});
+            if (oldR !== newR || JSON.stringify(old.seenBy || {}) !== JSON.stringify(val.seenBy || {})) {
+              allMessages[key] = val;
+              const row = msgContainer.querySelector(`[data-key="${key}"]`);
+              if (row) updateReactionsUI(row, key, val);
+              if (row) updateSeenUI(row, val);
+            }
+          } else {
+            // new message
+            allMessages[key] = val;
+            const existing = msgContainer.querySelector(`[data-key="${key}"]`);
+            if (!existing) { removeEmpty(); renderMsg(key, val, true); }
+          }
+        });
       }
     });
 
-    // Typing indicator
     onValue(ref(db, `rooms/${roomId}/typing`), snap => {
       if (!snap.exists()) { setTypingBar(''); return; }
-      const others = Object.entries(snap.val())
-        .filter(([uid]) => uid !== ME.uid)
-        .filter(([, v]) => Date.now() - v.ts < 4000);
+      const others = Object.entries(snap.val()).filter(([uid]) => uid !== ME.uid).filter(([, v]) => Date.now() - v.ts < 4000);
       if (!others.length) { setTypingBar(''); return; }
       const names = others.map(([, v]) => `${v.color.slice(1,4)} ${v.animal}`).join(', ');
       setTypingBar(others.length === 1 ? `${names} is typing…` : `${names} are typing…`);
     });
 
-    // Input handlers
     const inp = document.getElementById('msg-input');
     inp.addEventListener('input', () => {
       inp.style.height = 'auto';
       inp.style.height = Math.min(inp.scrollHeight, 120) + 'px';
       handleTyping();
     });
-    inp.addEventListener('keydown', e => {
-      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-    });
+    inp.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } });
     inp.focus();
   }
 
-  // ── RENDER MESSAGE ────────────────────────────────────────
-  function renderMsg(data, animate) {
-    if (!data || !data.text) return;
+  function markAllSeen() {
+    if (!currentRoom) return;
+    Object.entries(allMessages).forEach(([key, data]) => {
+      if (data.uid === ME.uid) return; // only mark others' messages
+      if (data.seenBy && data.seenBy[ME.uid]) return;
+      update(ref(db, `rooms/${currentRoom}/messages/${key}/seenBy`), { [ME.uid]: true });
+    });
+  }
+
+  // ── RENDER MESSAGE ──
+  function renderMsg(key, data, animate) {
+    if (!data || (!data.text && !data.imageUrl && !data.voiceUrl)) return;
     const isMe = data.uid === ME.uid;
     const container = document.getElementById('messages');
     const now = data.ts || Date.now();
@@ -572,9 +590,19 @@
 
     const row = document.createElement('div');
     row.className = `msg-row ${isMe ? 'mine' : 'others'}`;
-    row.dataset.ts  = data.ts;
+    row.dataset.key = key;
+    row.dataset.ts = data.ts;
     row.dataset.uid = data.uid;
     if (!animate) row.style.animation = 'none';
+
+    // Hover action bar
+    const actions = document.createElement('div');
+    actions.className = 'msg-actions';
+    actions.innerHTML = `
+      <button class="action-btn" title="React" onclick="toggleEmojiPicker(event,'${key}')">😊</button>
+      <button class="action-btn" title="Reply" onclick="setReplyFromKey('${key}')">↩</button>
+    `;
+    row.appendChild(actions);
 
     const avatarEl = document.createElement('div');
     avatarEl.className = `avatar${sameCluster ? ' hidden' : ''}`;
@@ -592,43 +620,230 @@
       wrap.appendChild(nameEl);
     }
 
-    const bubble = document.createElement('div');
-    bubble.className = 'bubble';
-    bubble.textContent = data.text;
+    // Reply quote
+    if (data.replyTo) {
+      const rq = document.createElement('div');
+      rq.className = 'reply-quote';
+      rq.innerHTML = `<div class="rq-name">${data.replyTo.color.slice(1,4)} ${data.replyTo.animal}</div><div class="rq-text">${escHtml(data.replyTo.text)}</div>`;
+      rq.onclick = () => scrollToMsg(data.replyTo.key);
+      wrap.appendChild(rq);
+    }
 
+    const bubble = document.createElement('div');
+
+    if (data.voiceUrl) {
+      bubble.className = 'bubble';
+      bubble.style.padding = '0';
+      const dur = data.duration || 0;
+      const m = Math.floor(dur/60), s = dur%60;
+      const bars = Array.from({length:8}, () => {
+        const h = 6 + Math.random()*16;
+        return `<span style="height:${h}px"></span>`;
+      }).join('');
+      bubble.innerHTML = `<div class="voice-bubble">
+        <button class="voice-play-btn" onclick="toggleVoice(this,'${data.voiceUrl}')">▶</button>
+        <div class="voice-waveform" id="wv_${key}">${bars}</div>
+        <span class="voice-duration">${m}:${s.toString().padStart(2,'0')}</span>
+      </div>`;
+    } else if (data.imageUrl) {
+      bubble.className = 'bubble img-bubble';
+      const img = document.createElement('img');
+      img.src = data.imageUrl;
+      img.alt = 'image';
+      img.loading = 'lazy';
+      img.onclick = () => openLightbox(data.imageUrl);
+      bubble.appendChild(img);
+    } else {
+      bubble.className = 'bubble';
+      bubble.textContent = data.text;
+    }
+
+    wrap.appendChild(bubble);
+
+    // Meta row (time + seen ticks)
+    const meta = document.createElement('div');
+    meta.className = 'bubble-meta';
     const timeEl = document.createElement('div');
     timeEl.className = 'bubble-time';
     timeEl.textContent = formatTime(data.ts);
+    meta.appendChild(timeEl);
+    if (isMe) {
+      const ticks = document.createElement('div');
+      ticks.className = 'seen-ticks';
+      ticks.dataset.seenKey = key;
+      const seenCount = data.seenBy ? Object.keys(data.seenBy).length : 0;
+      ticks.textContent = seenCount > 0 ? '✓✓' : '✓';
+      ticks.classList.toggle('seen', seenCount > 0);
+      meta.appendChild(ticks);
+    }
+    wrap.appendChild(meta);
 
-    wrap.appendChild(bubble);
-    wrap.appendChild(timeEl);
+    // Reactions
+    const reactBar = document.createElement('div');
+    reactBar.className = 'reactions-bar';
+    reactBar.dataset.reactKey = key;
+    buildReactionsUI(reactBar, key, data);
+    wrap.appendChild(reactBar);
 
     if (isMe) { row.appendChild(wrap); row.appendChild(avatarEl); }
-    else       { row.appendChild(avatarEl); row.appendChild(wrap); }
+    else { row.appendChild(avatarEl); row.appendChild(wrap); }
 
     container.appendChild(row);
     if (animate || isMe) container.scrollTop = container.scrollHeight;
   }
 
-  // ── SEND ──────────────────────────────────────────────────
-  window.sendMessage = async function() {
-    const inp  = document.getElementById('msg-input');
-    const text = inp.value.trim();
-    if (!text || !currentRoom) return;
-    inp.value = '';
-    inp.style.height = 'auto';
-    clearTyping();
-
-    const msgsRef = ref(db, `rooms/${currentRoom}/messages`);
-    await push(msgsRef, {
-      text,
-      uid:    ME.uid,
-      color:  ME.color,
-      animal: ME.animal,
-      ts:     Date.now()
+  function buildReactionsUI(bar, key, data) {
+    bar.innerHTML = '';
+    if (!data.reactions) return;
+    const counts = {};
+    const mine = new Set();
+    Object.entries(data.reactions).forEach(([uid, emojis]) => {
+      (emojis || []).forEach(e => {
+        counts[e] = (counts[e]||0) + 1;
+        if (uid === ME.uid) mine.add(e);
+      });
     });
-    pruneOldMessages(msgsRef);
+    Object.entries(counts).forEach(([emoji, count]) => {
+      const pill = document.createElement('button');
+      pill.className = `reaction-pill${mine.has(emoji) ? ' mine-reaction' : ''}`;
+      pill.innerHTML = `${emoji} <span class="reaction-count">${count}</span>`;
+      pill.onclick = () => toggleReaction(key, emoji);
+      bar.appendChild(pill);
+    });
+  }
+  function updateReactionsUI(row, key, data) {
+    const bar = row.querySelector(`[data-react-key="${key}"]`);
+    if (bar) buildReactionsUI(bar, key, data);
+  }
+  function updateSeenUI(row, data) {
+    const ticks = row.querySelector('.seen-ticks');
+    if (!ticks) return;
+    const seenCount = data.seenBy ? Object.keys(data.seenBy).length : 0;
+    ticks.textContent = seenCount > 0 ? '✓✓' : '✓';
+    ticks.classList.toggle('seen', seenCount > 0);
+  }
+
+  async function toggleReaction(key, emoji) {
+    if (!currentRoom) return;
+    const msgData = allMessages[key];
+    if (!msgData) return;
+    const reactions = msgData.reactions || {};
+    const myReacts = reactions[ME.uid] || [];
+    let updated;
+    if (myReacts.includes(emoji)) {
+      updated = myReacts.filter(e => e !== emoji);
+    } else {
+      updated = [...myReacts, emoji];
+    }
+    await update(ref(db, `rooms/${currentRoom}/messages/${key}/reactions`), { [ME.uid]: updated });
+  }
+
+  // Emoji picker
+  let activePickerKey = null;
+  window.toggleEmojiPicker = function(e, key) {
+    e.stopPropagation();
+    // close existing
+    document.querySelectorAll('.emoji-picker').forEach(p => p.remove());
+    if (activePickerKey === key) { activePickerKey = null; return; }
+    activePickerKey = key;
+    const row = document.querySelector(`[data-key="${key}"]`);
+    if (!row) return;
+    const picker = document.createElement('div');
+    picker.className = 'emoji-picker';
+    QUICK_EMOJI.forEach(em => {
+      const btn = document.createElement('div');
+      btn.className = 'ep-emoji';
+      btn.textContent = em;
+      btn.onclick = (ev) => { ev.stopPropagation(); toggleReaction(key, em); picker.remove(); activePickerKey = null; };
+      picker.appendChild(btn);
+    });
+    const wrap = row.querySelector('.bubble-wrap');
+    if (wrap) { wrap.style.position = 'relative'; wrap.appendChild(picker); }
   };
+  document.addEventListener('click', () => { document.querySelectorAll('.emoji-picker').forEach(p => p.remove()); activePickerKey = null; });
+
+  window.setReplyFromKey = function(key) {
+    const data = allMessages[key];
+    if (data) setReply(key, data);
+  };
+
+  function scrollToMsg(key) {
+    const row = document.querySelector(`[data-key="${key}"]`);
+    if (row) { row.scrollIntoView({ behavior: 'smooth', block: 'center' }); row.classList.add('highlight-flash'); setTimeout(() => row.classList.remove('highlight-flash'), 700); }
+  }
+
+  // Voice playback
+  let currentAudio = null;
+  window.toggleVoice = function(btn, url) {
+    if (currentAudio && !currentAudio.paused) {
+      currentAudio.pause();
+      document.querySelectorAll('.voice-waveform').forEach(w => w.classList.remove('playing'));
+      document.querySelectorAll('.voice-play-btn').forEach(b => b.textContent = '▶');
+      if (currentAudio.src.includes(encodeURIComponent(url.split('/').pop().split('?')[0])) || currentAudio.src === url) {
+        currentAudio = null; return;
+      }
+    }
+    currentAudio = new Audio(url);
+    currentAudio.play();
+    btn.textContent = '⏸';
+    const wv = btn.closest('.voice-bubble')?.querySelector('.voice-waveform');
+    if (wv) wv.classList.add('playing');
+    currentAudio.onended = () => { btn.textContent = '▶'; if (wv) wv.classList.remove('playing'); };
+  };
+
+  // ── SEND ──
+  window.sendMessage = async function() {
+    const inp = document.getElementById('msg-input');
+    const text = inp.value.trim();
+    if (!text && !selectedFile) return;
+    if (!currentRoom) return;
+    if (selectedFile) { await sendImage(selectedFile); clearImageSelection(); }
+    if (text) {
+      inp.value = '';
+      inp.style.height = 'auto';
+      clearTyping();
+      const msgData = { text, uid: ME.uid, color: ME.color, animal: ME.animal, ts: Date.now() };
+      if (replyTo) { msgData.replyTo = replyTo; clearReply(); }
+      const msgsRef = ref(db, `rooms/${currentRoom}/messages`);
+      await push(msgsRef, msgData);
+      pruneOldMessages(msgsRef);
+    }
+  };
+
+  async function sendImage(file) {
+    const bar = document.getElementById('uploading-bar');
+    bar.style.display = 'block'; bar.textContent = '📤 Uploading image…';
+    try {
+      const filename = `rooms/${currentRoom}/${Date.now()}_${ME.uid}.jpg`;
+      const storageRef = sref(storage, filename);
+      const compressed = await compressImage(file, 1200, 0.82);
+      await uploadBytes(storageRef, compressed);
+      const imageUrl = await getDownloadURL(storageRef);
+      const msgData = { imageUrl, uid: ME.uid, color: ME.color, animal: ME.animal, ts: Date.now() };
+      if (replyTo) { msgData.replyTo = replyTo; clearReply(); }
+      const msgsRef = ref(db, `rooms/${currentRoom}/messages`);
+      await push(msgsRef, msgData);
+      pruneOldMessages(msgsRef);
+    } catch (err) { showToast('Failed to upload image. Check Storage rules.'); console.error(err); }
+    finally { bar.style.display = 'none'; }
+  }
+
+  function compressImage(file, maxWidth, quality) {
+    return new Promise(resolve => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        let { width, height } = img;
+        if (width > maxWidth) { height = Math.round(height * maxWidth / width); width = maxWidth; }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        canvas.toBlob(blob => resolve(blob), 'image/jpeg', quality);
+      };
+      img.src = url;
+    });
+  }
 
   async function pruneOldMessages(msgsRef) {
     const cutoff = Date.now() - 48 * 60 * 60 * 1000;
@@ -637,7 +852,7 @@
     snap.forEach(child => { if (child.val().ts < cutoff) remove(child.ref); });
   }
 
-  // ── TYPING ────────────────────────────────────────────────
+  // ── TYPING ──
   function handleTyping() {
     if (!currentRoom) return;
     set(ref(db, `rooms/${currentRoom}/typing/${ME.uid}`), { color: ME.color, animal: ME.animal, ts: Date.now() });
@@ -651,25 +866,29 @@
   }
   function setTypingBar(text) { document.getElementById('typing-bar').textContent = text; }
 
-  // ── LEAVE ─────────────────────────────────────────────────
+  // ── LIGHTBOX ──
+  window.openLightbox = function(url) { document.getElementById('lightbox-img').src = url; document.getElementById('lightbox').classList.add('open'); };
+  window.closeLightbox = function() { document.getElementById('lightbox').classList.remove('open'); };
+
+  // ── LEAVE ──
   window.leaveRoom = function() {
     if (msgListenerRef) { off(msgListenerRef); msgListenerRef = null; }
-    if (presenceRef)    { remove(presenceRef); presenceRef = null; }
+    if (presenceRef) { remove(presenceRef); presenceRef = null; }
     clearTyping();
-    currentRoom = null; lastSenderId = null; lastSenderTs = 0;
+    clearImageSelection();
+    currentRoom = null; lastSenderId = null; lastSenderTs = 0; allMessages = {};
     document.getElementById('messages').innerHTML = '';
     document.getElementById('msg-input').value = '';
     document.getElementById('chat-app').style.display = 'none';
-    document.getElementById('lobby').style.display     = 'flex';
+    document.getElementById('lobby').style.display = 'flex';
   };
 
-  // ── COPY ROOM LINK ────────────────────────────────────────
   window.copyRoomCode = function() {
     const url = `${location.origin}${location.pathname}?room=${currentRoom}`;
     navigator.clipboard.writeText(url).then(() => showToast('Room link copied! 🔗'));
   };
 
-  // ── UTILS ─────────────────────────────────────────────────
+  // ── UTILS ──
   function appendSystem(text) {
     const el = document.createElement('div');
     el.className = 'msg-system';
@@ -677,24 +896,20 @@
     document.getElementById('messages').appendChild(el);
   }
   function removeEmpty() { const h = document.getElementById('empty-hint'); if (h) h.remove(); }
-  function formatTime(ts) {
-    if (!ts) return '';
-    return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  }
+  function formatTime(ts) { if (!ts) return ''; return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
   function showToast(msg) {
     const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2500);
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
   }
+  function escHtml(s) { if (!s) return ''; return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  window.showToast = showToast;
 
-  // ── AUTO-JOIN FROM URL ────────────────────────────────────
   const urlRoom = new URLSearchParams(location.search).get('room');
   if (urlRoom) enterRoom(urlRoom.toLowerCase().replace(/[^a-z0-9\-_]/g,'-'));
 
   document.getElementById('create-room-id').addEventListener('keydown', e => { if (e.key==='Enter') createRoom(); });
-  document.getElementById('join-room-id').addEventListener('keydown',   e => { if (e.key==='Enter') joinRoom(); });
+  document.getElementById('join-room-id').addEventListener('keydown', e => { if (e.key==='Enter') joinRoom(); });
 </script>
-
 </body>
 </html>
